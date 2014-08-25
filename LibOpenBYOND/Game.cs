@@ -1,7 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace LibOpenBYOND
+namespace OpenBYOND
 {
     /// <summary>
     /// This is the main type for your game

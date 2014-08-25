@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 #endregion
 
-namespace LibOpenBYOND
+namespace OpenBYOND
 {
     /// <summary>
     /// The main class.
