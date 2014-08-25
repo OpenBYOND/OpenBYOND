@@ -89,7 +89,7 @@ namespace OpenBYOND.World
         {
             // Emulate BYOND behavior.  (ID instead of memory address)
             // TODO: Proper/improper crap.
-            return GetProperty<string>("name", String.Format("[0x{0:X}]",ID.ToString("X"))); 
+            return GetProperty<string>("name", String.Format("[0x{0:X}]",ID)); 
         }
 
         public override string ToString()
