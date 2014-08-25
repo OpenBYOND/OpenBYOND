@@ -6,7 +6,7 @@ using System.Text;
 namespace OpenBYOND.World
 {
     /// <summary>
-    /// Your basic object in the world.  Can have a loc.  Turfs also count.
+    /// Your basic object in the world.  _Can_ have a loc.  Turfs also count.
     /// </summary>
     public class Atom
     {
@@ -36,6 +36,14 @@ namespace OpenBYOND.World
         /// </summary>
         public string BYONDType { get; set; }
 
+        /// <summary>
+        /// Get a property as a simpler type.  
+        /// 
+        /// Throws exception if you fuck up.
+        /// </summary>
+        /// <typeparam name="T">Simple type to get (int, float, string)</typeparam>
+        /// <param name="key">Name of property.</param>
+        /// <returns></returns>
         public T GetProperty<T>(string key)
         {
             Atom a = null;
@@ -46,6 +54,7 @@ namespace OpenBYOND.World
             return (T)Utils.SimplifyProperty(typeof(T), a);
         }
 
+        // I don't know why I made this.
         public T GetProperty<T>(string key, T defaultValue)
         {
             Atom a = null;
@@ -56,6 +65,12 @@ namespace OpenBYOND.World
             return (T)Utils.SimplifyProperty(typeof(T), a);
         }
 
+        /// <summary>
+        /// Set a property, given a simple type.
+        /// </summary>
+        /// <typeparam name="T">Simple type (int, float, string)</typeparam>
+        /// <param name="key">Property to set.</param>
+        /// <param name="val">Value</param>
         public void SetProperty<T>(string key, T val)
         {
             Atom a = null;

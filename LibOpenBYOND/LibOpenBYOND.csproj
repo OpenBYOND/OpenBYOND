@@ -66,6 +66,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="SDL.dll" />
+    <None Include="Snippets\log.snippet" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="World.Serializers\" />
