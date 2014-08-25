@@ -36,6 +36,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>lib\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
+    <Reference Include="log4net">
+      <HintPath>..\packages\log4net.2.0.3\lib\net40-client\log4net.dll</HintPath>
+    </Reference>
     <Reference Include="Pngcs, Version=1.1.4.1, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>lib\Pngcs.dll</HintPath>
@@ -50,6 +53,7 @@
   <ItemGroup>
     <Compile Include="DMI.cs" />
     <Compile Include="Game.cs" />
+    <Compile Include="Utils.cs" />
     <Compile Include="World\Atom.cs" />
     <Compile Include="World\Tile.cs" />
     <Compile Include="World\World.cs" />
