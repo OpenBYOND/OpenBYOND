@@ -51,6 +51,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DME.cs" />
     <Compile Include="DMI.cs" />
     <Compile Include="Game.cs" />
     <Compile Include="Utils.cs" />
@@ -66,9 +67,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="SDL.dll" />
-    <None Include="Snippets\log.snippet" />
+    <None Include="Snippets\ilog.snippet" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="NewFolder1\" />
     <Folder Include="World.Serializers\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
