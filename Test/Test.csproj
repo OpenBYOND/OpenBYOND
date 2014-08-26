@@ -68,22 +68,26 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DMETest.cs" />
+    <Compile Include="DMITest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <Shadow Include="Test References\LibOpenBYOND.accessor" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="test.runsettings" />
+    <None Include="TestFiles\human.dmi">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestFiles\Test.dme">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\LibOpenBYOND\LibOpenBYOND.csproj">
       <Project>{58F9AE07-5DB9-4079-A343-9B6CBDF428F7}</Project>
       <Name>LibOpenBYOND</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="test.runsettings" />
-    <None Include="TestFiles\Test.dme">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

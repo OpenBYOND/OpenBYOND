@@ -25,10 +25,14 @@ namespace OpenBYOND.World
         /// </summary>
         public Dictionary<string, Atom> InitialProperties = new Dictionary<string, Atom>();
 
-        public Atom(bool makeInitial=true)
+        /// <summary>
+        /// Instantiate an atom.
+        /// </summary>
+        /// <param name="makeInitial">Create InitialProperties?</param>
+        public Atom(bool makeInitial = true)
         {
             if (makeInitial)
-                InitialProperties = new Dictionary<string,Atom>(Properties); // Make copy.
+                InitialProperties = new Dictionary<string, Atom>(Properties); // Make copy.
         }
 
         /// <summary>
@@ -74,11 +78,13 @@ namespace OpenBYOND.World
         public void SetProperty<T>(string key, T val)
         {
             Atom a = null;
-            if(val.GetType() == typeof(Atom))
+            if (val.GetType() == typeof(Atom))
             {
                 object o = val;
                 a = (Atom)o;
-            } else {
+            }
+            else
+            {
                 a = new SimpleAtom<T>(val);
             }
 
@@ -89,7 +95,7 @@ namespace OpenBYOND.World
         {
             // Emulate BYOND behavior.  (ID instead of memory address)
             // TODO: Proper/improper crap.
-            return GetProperty<string>("name", String.Format("[0x{0:X}]",ID)); 
+            return GetProperty<string>("name", String.Format("[0x{0:X}]", ID));
         }
 
         public override string ToString()
@@ -102,7 +108,8 @@ namespace OpenBYOND.World
     /// For simple types (T = int,float,string)
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class SimpleAtom<T> : Atom {
+    public class SimpleAtom<T> : Atom
+    {
 
         public SimpleAtom(T val)
         {
@@ -118,7 +125,8 @@ namespace OpenBYOND.World
         /// </summary>
         /// <param name="a"></param>
         /// <returns></returns>
-        public static implicit operator T(SimpleAtom<T> a) {
+        public static implicit operator T(SimpleAtom<T> a)
+        {
             return a.Value;
         }
     }

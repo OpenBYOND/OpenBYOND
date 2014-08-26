@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using log4net;
 
 namespace OpenBYOND
 {
@@ -8,11 +9,16 @@ namespace OpenBYOND
     /// </summary>
     public class BYONDGame : Game
     {
+        private static readonly ILog log = LogManager.GetLogger(typeof(Utils));
+
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
 
+        DMI testDMI;
+
         public BYONDGame()
         {
+            log.Info("BYONDGame Starting.");
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
         }
@@ -28,6 +34,7 @@ namespace OpenBYOND
             // TODO: Add your initialization logic here
 
             base.Initialize();
+
         }
 
         /// <summary>
@@ -36,8 +43,10 @@ namespace OpenBYOND
         /// </summary>
         protected override void LoadContent()
         {
+            log.Info("LoadContent()");
+
             // Create a new SpriteBatch, which can be used to draw textures.
-            spriteBatch = new SpriteBatch(GraphicsDevice);
+            testDMI = new DMI("../../../Test/TestFiles/human.dmi");
 
             // TODO: use this.Content to load your game content here
         }
@@ -71,6 +80,8 @@ namespace OpenBYOND
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
+
+            spriteBatch = testDMI.GetSpriteBatch("fatbody_s", this);
             // TODO: Add your drawing code here
 
             base.Draw(gameTime);
