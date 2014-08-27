@@ -67,8 +67,10 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DirUtilsTest.cs" />
     <Compile Include="DMETest.cs" />
     <Compile Include="DMITest.cs" />
+    <Compile Include="IconStateTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

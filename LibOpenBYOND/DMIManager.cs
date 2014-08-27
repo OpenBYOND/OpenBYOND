@@ -44,10 +44,10 @@ namespace OpenBYOND
             Instance.dmis.Clear();
         }
 
-        public static SpriteBatch GetSpriteBatch(Game game, string icon, string state, Direction dir = Direction.SOUTH, uint frame = 0, bool movement = false)
+        public static SpriteBatch GetSpriteBatch(Game game, string icon, string state, Vector2 offset, Direction dir = Direction.SOUTH, uint frame = 0, bool movement = false)
         {
             DMI dmi = GetDMI(icon);
-            return dmi.GetSpriteBatch(state, game, dir, frame, movement);
+            return dmi.GetSpriteBatch(state, game, offset, dir, frame, movement);
         }
 
         public static void Preload(string file)

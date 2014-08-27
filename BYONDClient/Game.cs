@@ -16,9 +16,9 @@ namespace OpenBYOND
         uint tick = 0;
         Direction[] Wiggle = new[] {
             Direction.WEST,
-            Direction.NORTH,
+            Direction.SOUTH,
             Direction.EAST,
-            Direction.NORTH,
+            Direction.SOUTH,
         };
 
         public BYONDGame()
@@ -84,13 +84,14 @@ namespace OpenBYOND
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
-            // Every 10 ticks...
-            if((tick++ % 10)==0) {
-                cdir = ++cdir % Wiggle.Length;
+            // Every 30 ticks...
+            if((tick++ % 30)==0) {
+                cdir = (cdir+1) % Wiggle.Length;
             }
 
-            DMIManager.GetSpriteBatch(this,"../../../Test/TestFiles/human.dmi", "fatbody_s", dir: Wiggle[cdir]);
-            // TODO: Add your drawing code here
+            DMIManager.GetSpriteBatch(this, "../../../Test/TestFiles/human.dmi",    "fatbody_s", new Vector2(32f, 32f), dir: Wiggle[cdir]);
+            DMIManager.GetSpriteBatch(this, "../../../Test/TestFiles/spacerat.dmi", "rat_brown", new Vector2(64f, 32f), dir: Wiggle[cdir]);
+            DMIManager.GetSpriteBatch(this, "../../../Test/TestFiles/robots.dmi",   "mommi",     new Vector2(96f, 32f), dir: Wiggle[cdir]);
 
             base.Draw(gameTime);
         }
