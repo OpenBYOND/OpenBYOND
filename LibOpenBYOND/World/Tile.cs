@@ -9,6 +9,10 @@ namespace OpenBYOND.World
     public class Tile
     {
         private static readonly ILog log = LogManager.GetLogger(typeof(Utils));
+
         public List<Atom> Atoms = new List<Atom>();
+
+        public string origID;
+        public int ID = -1;
     }
 }
