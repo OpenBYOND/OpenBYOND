@@ -34,6 +34,19 @@ namespace OpenBYOND
         public string Name = "";
         public uint NumDirections = 1;
         public uint NumFrames = 1;
+        public bool Movement = false;
+
+        public static string CollectionKey(string Name, bool Movement)
+        {
+            string tags = "";
+            if (Movement)
+                tags += 'M';
+
+            if (tags.Length > 0)
+                return Name + '\t' + tags;
+            else
+                return Name;
+        }
 
         public void Initialize()
         {
@@ -74,6 +87,11 @@ namespace OpenBYOND
         public uint GetTotalNumIcons()
         {
             return NumDirections * NumFrames;
+        }
+
+        internal string GetCollKey()
+        {
+            return IconState.CollectionKey(Name, Movement);
         }
     }
     public class DMI
@@ -120,25 +138,14 @@ namespace OpenBYOND
 
         public DMI(string icon)
         {
+            Load(icon);
+        }
+
+        public void Load(string icon)
+        {
             FileName = Path.GetFullPath(icon);
 
-            string ztxt = string.Empty;
-
-            PngReader pngr = FileHelper.CreatePngReader(FileName);
-            width = pngr.ImgInfo.Rows;
-            height = pngr.ImgInfo.Cols;
-            ChunksList clist = pngr.GetChunksList();
-
-            /*The File should only have one zTxt, this chunk stores our DMI information such as
-             *sprite width, height, iconstates, directionals and frames among other things.
-             */
-            foreach (PngChunkZTXT desc in clist.GetById("zTXt"))
-            {
-                ztxt = desc.GetVal();
-                break;
-            }
-            pngr.ShouldCloseStream = true;
-            pngr.End();
+            string ztxt = GetHeader(icon);
 
             ////////////////////////////
             // Current state of things.
@@ -231,7 +238,7 @@ namespace OpenBYOND
                             log.DebugFormat("Loaded {0} icons for state {1}.", currentState.Frames.Length, currentState.Name);
 
                             // Store state.
-                            states[currentState.Name] = currentState;
+                            states[currentState.GetCollKey()] = currentState;
                         }
 
                         // New state.
@@ -240,6 +247,9 @@ namespace OpenBYOND
                         break;
                     case "dirs":
                         currentState.NumDirections = uint.Parse(val);
+                        break;
+                    case "movement":
+                        currentState.Movement = (int.Parse(val) == 1);
                         break;
                     case "frames":
                         currentState.NumFrames = uint.Parse(val);
@@ -260,11 +270,40 @@ namespace OpenBYOND
 
         }
 
-        public SpriteBatch GetSpriteBatch(string icon_state, Game game)
+        public string GetHeader(string icon)
         {
-            IconFrame f = GetIconState(icon_state).GetFrame(0, Direction.SOUTH);
+            string ztxt = string.Empty;
+
+            PngReader pngr = FileHelper.CreatePngReader(FileName);
+            width = pngr.ImgInfo.Rows;
+            height = pngr.ImgInfo.Cols;
+            ChunksList clist = pngr.GetChunksList();
+
+            /*The File should only have one zTxt, this chunk stores our DMI information such as
+             *sprite width, height, iconstates, directionals and frames among other things.
+             */
+            foreach (PngChunkZTXT desc in clist.GetById("zTXt"))
+            {
+                ztxt = desc.GetVal();
+                break;
+            }
+            pngr.ShouldCloseStream = true;
+            pngr.End();
+
+            return ztxt;
+        }
+
+        public IconState GetIconState(string icon_state, bool movement=false)
+        {
+            return states[IconState.CollectionKey(icon_state,movement)];
+        }
+
+        public SpriteBatch GetSpriteBatch(string state,Game game, Direction dir=Direction.SOUTH, uint frame=0, bool movement=false)
+        {
+            IconFrame f = GetIconState(state, movement).GetFrame(frame, dir);
+
             SpriteBatch sb = new SpriteBatch(game.GraphicsDevice);
-            Console.WriteLine(f.rect.X + " " + f.rect.Y);
+            //Console.WriteLine(f.rect.X + " " + f.rect.Y);
             //game.GraphicsDevice.Clear(Color.White);
             sb.Begin();
             if (texture == null)
@@ -275,11 +314,6 @@ namespace OpenBYOND
             sb.Draw(texture, new Vector2(50F, 50F), f.rect, Color.White);
             sb.End();
             return sb;
-        }
-
-        public IconState GetIconState(string icon_state)
-        {
-            return states[icon_state];
         }
     }
 }

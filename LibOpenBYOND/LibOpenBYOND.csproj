@@ -57,6 +57,7 @@
     <Compile Include="Direction.cs" />
     <Compile Include="DME.cs" />
     <Compile Include="DMI.cs" />
+    <Compile Include="DMIManager.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="World\Atom.cs" />
     <Compile Include="World\Tile.cs" />

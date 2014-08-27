@@ -12,9 +12,14 @@ namespace OpenBYOND
         private static readonly ILog log = LogManager.GetLogger(typeof(Utils));
 
         GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
-
-        DMI testDMI;
+        int cdir = 0;
+        uint tick = 0;
+        Direction[] Wiggle = new[] {
+            Direction.WEST,
+            Direction.NORTH,
+            Direction.EAST,
+            Direction.NORTH,
+        };
 
         public BYONDGame()
         {
@@ -46,7 +51,7 @@ namespace OpenBYOND
             log.Info("LoadContent()");
 
             // Create a new SpriteBatch, which can be used to draw textures.
-            testDMI = new DMI("../../../Test/TestFiles/human.dmi");
+            DMIManager.Preload("../../../Test/TestFiles/human.dmi");
 
             // TODO: use this.Content to load your game content here
         }
@@ -79,9 +84,12 @@ namespace OpenBYOND
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
+            // Every 10 ticks...
+            if((tick++ % 10)==0) {
+                cdir = ++cdir % Wiggle.Length;
+            }
 
-
-            spriteBatch = testDMI.GetSpriteBatch("fatbody_s", this);
+            DMIManager.GetSpriteBatch(this,"../../../Test/TestFiles/human.dmi", "fatbody_s", dir: Wiggle[cdir]);
             // TODO: Add your drawing code here
 
             base.Draw(gameTime);
