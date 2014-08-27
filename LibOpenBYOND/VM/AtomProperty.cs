@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Reflection;
 
-namespace OpenBYOND.World
+namespace OpenBYOND.VM
 {
     /// <summary>
     /// Specifies which atom property to bind with.

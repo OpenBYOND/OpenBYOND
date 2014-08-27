@@ -5,7 +5,7 @@ using System.Text;
 using System.Reflection;
 using log4net;
 
-namespace OpenBYOND.World
+namespace OpenBYOND.VM
 {
     internal class NativeAtomProperty
     {
@@ -132,7 +132,7 @@ namespace OpenBYOND.World
             }
             else
             {
-                a = new SimpleAtom<T>(val);
+                a = new BYONDValue<T>(val);
             }
 
             Properties[key] = a;
@@ -151,30 +151,5 @@ namespace OpenBYOND.World
         }
     }
 
-    /// <summary>
-    /// For simple types (T = int,float,string)
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class SimpleAtom<T> : Atom
-    {
 
-        public SimpleAtom(T val)
-        {
-            this.Value = val;
-        }
-        /// <summary>
-        /// Value of the "simple" type.
-        /// </summary>
-        public T Value { get; set; }
-
-        /// <summary>
-        /// Implicit casting.
-        /// </summary>
-        /// <param name="a"></param>
-        /// <returns></returns>
-        public static implicit operator T(SimpleAtom<T> a)
-        {
-            return a.Value;
-        }
-    }
 }

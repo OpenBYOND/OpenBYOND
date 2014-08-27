@@ -181,3 +181,5 @@ FakesAssemblies/
 /bin/LibOpenBYOND.dll
 /bin/OpenBYONDClient.exe
 /*.sln
+/bin/OpenBYONDClient.vshost.exe
+/bin/OpenBYONDClient.vshost.exe.manifest

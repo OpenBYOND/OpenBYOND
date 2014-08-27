@@ -13,5 +13,10 @@ namespace OpenBYOND.World
         {
             Tiles = new Tile[size_x, size_y];
         }
+
+        public Tile GetTile(uint x, uint y)
+        {
+            return Tiles[x, y];
+        }
     }
 }

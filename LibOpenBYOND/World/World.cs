@@ -4,7 +4,8 @@ using System.Linq;
 using System.Text;
 using OpenBYOND.World;
 using OpenBYOND.World.Format;
-using LibOpenBYOND.World;
+using OpenBYOND.VM;
+using LibOpenBYOND.VM;
 
 /**
  * N3X here, I'm going to initially construct this like BYONDTools' Map.
@@ -12,6 +13,7 @@ using LibOpenBYOND.World;
  */
 namespace OpenBYOND.World
 {
+    [GlobalBinding("world")]
     public class World : Atom
     {
         public List<ZLevel> Levels = new List<ZLevel>();
@@ -24,7 +26,8 @@ namespace OpenBYOND.World
         [AtomProperty("turf")]
         public Atom default_turf = null;
 
-        public World() : base()
+        public World()
+            : base()
         {
         }
 
@@ -37,7 +40,23 @@ namespace OpenBYOND.World
                 Levels.Add(zLevel);
             return zLevel;
         }
-    
+
+        /// <summary>
+        /// Get the Tile at an x,y,z coordinate.
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="z"></param>
+        /// <returns></returns>
+        public Tile GetTileAt(uint x, uint y, uint z)
+        {
+            if (z < Levels.Count)
+            {
+                return Levels[(int)z].GetTile(x, y);
+            }
+            return null;
+        }
+
         /*
         public AtomIterator IterAtoms() { return new AtomIterator(this); }
         public TileIterator IterTiles() { return new TileIterator(this); }
