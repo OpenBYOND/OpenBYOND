@@ -5,7 +5,7 @@ using System.Text;
 
 namespace OpenBYOND.World
 {
-    class ZLevel
+    public class ZLevel
     {
         public Tile[,] Tiles;
 

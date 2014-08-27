@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace OpenBYOND.World.Serializers
+namespace LibOpenBYOND.World
 {
-    interface IWorldSerializer
+    class ObjectTree
     {
     }
 }

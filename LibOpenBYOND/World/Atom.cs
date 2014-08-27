@@ -2,14 +2,40 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Reflection;
+using log4net;
 
 namespace OpenBYOND.World
 {
+    internal class NativeAtomProperty
+    {
+        public string DMProperty;
+        public PropertyInfo CSProperty;
+        private Atom atom;
+
+        public NativeAtomProperty(Atom atom)
+        {
+            this.atom = atom;
+        }
+
+        public void Set(object value)
+        {
+            CSProperty.SetValue(atom, value, new object[0]);
+        }
+
+        public void Get()
+        {
+            CSProperty.GetValue(atom, new object[0]);
+        }
+    }
+
     /// <summary>
     /// Your basic object in the world.  _Can_ have a loc.  Turfs also count.
     /// </summary>
     public class Atom
     {
+        private static readonly ILog log = LogManager.GetLogger(typeof(Utils));
+
         /// <summary>
         /// ID of the instance.
         /// </summary>
@@ -26,6 +52,13 @@ namespace OpenBYOND.World
         public Dictionary<string, Atom> InitialProperties = new Dictionary<string, Atom>();
 
         /// <summary>
+        /// DO NOT FUCK WITH THIS.
+        /// 
+        /// Set by AtomPropertyAttribute.
+        /// </summary>
+        private Dictionary<string, NativeAtomProperty> NativeProperties = new Dictionary<string, NativeAtomProperty>();
+
+        /// <summary>
         /// Instantiate an atom.
         /// </summary>
         /// <param name="makeInitial">Create InitialProperties?</param>
@@ -33,6 +66,20 @@ namespace OpenBYOND.World
         {
             if (makeInitial)
                 InitialProperties = new Dictionary<string, Atom>(Properties); // Make copy.
+
+            // Build NativeProperties mappings
+            foreach (PropertyInfo prop in GetType().GetProperties())
+            {
+                foreach (AtomPropertyAttribute apa in prop.GetCustomAttributes(typeof(AtomPropertyAttribute), true))
+                {
+                    NativeAtomProperty nap = new NativeAtomProperty(this);
+                    nap.CSProperty=prop;
+                    nap.DMProperty=apa.Name!=null ? apa.Name : prop.Name;
+                    NativeProperties[nap.DMProperty] = nap;
+
+                    log.DebugFormat("Mapped C# property {0} to atom property {1}.", prop.Name, nap.DMProperty);
+                }
+            }
         }
 
         /// <summary>
