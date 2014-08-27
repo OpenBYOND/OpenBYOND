@@ -7,7 +7,7 @@ namespace OpenBYOND
     /// <summary>
     /// This is the main type for your game
     /// </summary>
-    public class BYONDGame : Game
+    public class OpenBYONDGame : Game
     {
         private static readonly ILog log = LogManager.GetLogger(typeof(Utils));
 
@@ -21,7 +21,7 @@ namespace OpenBYOND
             Direction.SOUTH,
         };
 
-        public BYONDGame()
+        public OpenBYONDGame()
         {
             log.Info("BYONDGame Starting.");
             graphics = new GraphicsDeviceManager(this);

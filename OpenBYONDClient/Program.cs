@@ -17,7 +17,7 @@ namespace OpenBYOND
         [STAThread]
         static void Main()
         {
-            using (var game = new BYONDGame())
+            using (var game = new OpenBYONDGame())
                 game.Run();
         }
     }

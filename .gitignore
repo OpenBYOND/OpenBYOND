@@ -175,3 +175,6 @@ FakesAssemblies/
 
 # Backups.
 *.bak
+*.build
+/compile.bat
+*.csproj

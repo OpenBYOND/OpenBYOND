@@ -1,0 +1,102 @@
+<?xml version="1.0" ?>
+<Prebuild version="1.10" xmlns="http://dnpb.sourceforge.net/schemas/prebuild-1.10.xsd">
+	<Solution activeConfig="Debug" name="OpenBYOND" path="./" version="0.0.1">
+		<Configuration name="Debug" platform="x64">
+			<Options>
+				<CompilerDefines>TRACE;DEBUG</CompilerDefines>
+				<OptimizeCode>false</OptimizeCode>
+				<CheckUnderflowOverflow>false</CheckUnderflowOverflow>
+				<AllowUnsafe>false</AllowUnsafe>
+				<WarningLevel>4</WarningLevel>
+				<WarningsAsErrors>false</WarningsAsErrors>
+				<SuppressWarnings/>
+				<OutputPath>bin</OutputPath>
+				<DebugInformation>true</DebugInformation>
+				<IncrementalBuild>true</IncrementalBuild>
+				<NoStdLib>false</NoStdLib>
+				<Platform>x64</Platform>
+			</Options>
+		</Configuration>
+		<Configuration name="Release" platform="x64">
+			<Options>
+				<CompilerDefines>TRACE</CompilerDefines>
+				<OptimizeCode>true</OptimizeCode>
+				<CheckUnderflowOverflow>false</CheckUnderflowOverflow>
+				<AllowUnsafe>false</AllowUnsafe>
+				<WarningLevel>4</WarningLevel>
+				<WarningsAsErrors>false</WarningsAsErrors>
+				<SuppressWarnings/>
+				<OutputPath>bin</OutputPath>
+				<DebugInformation>false</DebugInformation>
+				<IncrementalBuild>true</IncrementalBuild>
+				<NoStdLib>false</NoStdLib>
+				<Platform>x64</Platform>
+			</Options>
+		</Configuration> 
+		
+		<Project frameworkVersion="v4_0" name="LibOpenBYOND" path="LibOpenBYOND" type="Library">
+			<Configuration name="Debug" platform="x64">
+				<Options>
+					<OutputPath>../bin/</OutputPath>
+					<Platform>x64</Platform>
+				</Options>
+			</Configuration>
+			<Configuration name="Release" platform="x64">
+				<Options>
+					<OutputPath>../bin/</OutputPath>
+				</Options>
+			</Configuration>
+			
+			<ReferencePath>../bin/</ReferencePath>
+			
+			<Reference name="ICSharpCode.SharpZipLib" path="../bin/" />
+			<Reference name="log4net" path="../bin/" />
+			<Reference name="MonoGame.Framework" path="../bin/" />
+			<Reference name="OpenTK" path="../bin/" />
+			<Reference name="Pngcs" path="../bin/" />
+			<Reference name="Tao.Sdl" path="../bin/" />
+			
+			<Reference name="System" />
+			<Reference name="System.Core" />
+			<Reference name="System.Xml" />
+			<Reference name="System.Xml.Linq" />
+			
+			<Files>
+				<Match pattern="*.cs" recurse="true"/>
+			</Files>
+		</Project>
+		
+		
+		<Project frameworkVersion="v4_0" name="OpenBYONDClient" path="OpenBYONDClient" type="Library">
+			<Configuration name="Debug" platform="x64">
+				<Options>
+					<OutputPath>../bin/</OutputPath>
+				</Options>
+			</Configuration>
+			<Configuration name="Release" platform="x64">
+				<Options>
+					<OutputPath>../bin/</OutputPath>
+				</Options>
+			</Configuration>
+			
+			<ReferencePath>../bin/</ReferencePath>
+			
+			<Reference name="ICSharpCode.SharpZipLib" path="../bin/" />
+			<Reference name="log4net" path="../bin/" />
+			<Reference name="MonoGame.Framework" path="../bin/" />
+			<Reference name="OpenTK" path="../bin/" />
+			<Reference name="Pngcs" path="../bin/" />
+			<Reference name="Tao.Sdl" path="../bin/" />
+			<Reference name="LibOpenBYOND" path="../bin/" />
+			
+			<Reference name="System" />
+			<Reference name="System.Core" />
+			<Reference name="System.Xml" />
+			<Reference name="System.Xml.Linq" />
+			
+			<Files>
+				<Match pattern="*.cs" recurse="true"/>
+			</Files>
+		</Project>
+	</Solution>
+</Prebuild>
