@@ -179,3 +179,5 @@ FakesAssemblies/
 /compile.bat
 *.csproj
 /bin/LibOpenBYOND.dll
+/bin/OpenBYONDClient.exe
+/*.sln

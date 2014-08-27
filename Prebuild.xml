@@ -67,7 +67,7 @@
 		</Project>
 		
 		
-		<Project frameworkVersion="v4_0" name="OpenBYONDClient" path="OpenBYONDClient" type="Library">
+		<Project frameworkVersion="v4_0" name="OpenBYONDClient" path="OpenBYONDClient" type="WinExe">
 			<Configuration name="Debug" platform="x64">
 				<Options>
 					<OutputPath>../bin/</OutputPath>

@@ -51,7 +51,7 @@ namespace OpenBYOND
             log.Info("LoadContent()");
 
             // Create a new SpriteBatch, which can be used to draw textures.
-            DMIManager.Preload("../../../Test/TestFiles/human.dmi");
+            DMIManager.Preload("TestFiles/human.dmi");
 
             // TODO: use this.Content to load your game content here
         }
@@ -89,9 +89,9 @@ namespace OpenBYOND
                 cdir = (cdir+1) % Wiggle.Length;
             }
 
-            DMIManager.GetSpriteBatch(this, "../../../Test/TestFiles/human.dmi",    "fatbody_s", new Vector2(32f, 32f), dir: Wiggle[cdir]);
-            DMIManager.GetSpriteBatch(this, "../../../Test/TestFiles/spacerat.dmi", "rat_brown", new Vector2(64f, 32f), dir: Wiggle[cdir]);
-            DMIManager.GetSpriteBatch(this, "../../../Test/TestFiles/robots.dmi",   "mommi",     new Vector2(96f, 32f), dir: Wiggle[cdir]);
+            DMIManager.GetSpriteBatch(this, "TestFiles/human.dmi",    "fatbody_s", new Vector2(32f, 32f), dir: Wiggle[cdir]);
+            DMIManager.GetSpriteBatch(this, "TestFiles/spacerat.dmi", "rat_brown", new Vector2(64f, 32f), dir: Wiggle[cdir]);
+            DMIManager.GetSpriteBatch(this, "TestFiles/robots.dmi",   "mommi",     new Vector2(96f, 32f), dir: Wiggle[cdir]);
 
             base.Draw(gameTime);
         }
