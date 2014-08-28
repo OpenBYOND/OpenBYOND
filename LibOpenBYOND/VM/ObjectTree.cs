@@ -1,4 +1,10 @@
-﻿using System;
+﻿/**
+ * YES I REALIZE THIS IS AN UNHOLY CLUSTERFUCK.
+ * 
+ * PLEASE FEEL FREE TO TIDY UP.
+ *  - N3XYPOO
+ */
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -44,7 +50,7 @@ namespace OpenBYOND.VM
         List<string> cpath = new List<string>();
 
         /// <summary>
-        /// How many tabs each level is.
+        /// How many path chunks to slice off when we go down an indent.
         /// </summary>
         Stack<int> popLevels = new Stack<int>();
 
@@ -110,56 +116,91 @@ namespace OpenBYOND.VM
             if (debugOn)
                 log.DebugFormat("{} > {}", numtabs, line.TrimEnd());
 
+            // Global scope (no tabs)
             if (numtabs == 0)
             {
                 this.cpath = atom_path;
+                // Ensure cpath has a slash at the front (empty first entry)
                 if (this.cpath.Count == 0)
                     this.cpath.Add("");
                 else if (this.cpath[0] != "")
                     this.cpath.Insert(0, "");
+
+                // Create new poplevel stack, add current path length to it.
                 this.popLevels = new Stack<int>();
                 this.popLevels.Push(this.cpath.Count);
+
                 if (this.debugOn)
                     debug(filename, ln, this.cpath, "0 - " + string.Join("/", atom_path));
 
             }
-            else if (numtabs > pindent)
+            else if (numtabs > pindent) // Going up a tab level.
             {
+                // Add path to cpath.
                 this.cpath.AddRange(atom_path);
+
+                // Add new poplevel with current path length.
                 this.popLevels.Push(atom_path.Count);
+
                 if (this.debugOn)
                     debug(filename, ln, this.cpath, ">");
 
             }
-            else if (numtabs < pindent)
+            else if (numtabs < pindent) // Going down.
             {
                 if (this.debugOn)
                     log.DebugFormat("({0} - {1})={2}: {3}", this.pindent, numtabs, this.pindent - numtabs, string.Join("/", this.cpath));
+
+                // This is complex as fuck, so bear with me.
+                // For every poplevel we've lost, we need to slice off some path chunks or we fuck up our context.
+                //
+                // /butt
+                //   ugly
+                //     dirty    // /butt/ugly/dirty, 2 poplevels both with content 1 (number of things we added to path)
+                //   nice       // Here, we slice off 1 path segment, and add "nice", getting /butt/nice.
                 for (int i = 0; i < (this.pindent - numtabs + 1); i++)
                 {
+                    // Pop a poplevel out, find out how many path chunks we need to remove.
                     var popsToDo = this.popLevels.Pop();
+
                     if (this.debugOn)
                         log.DebugFormat(" pop {0} {1}", popsToDo, this.popLevels);
+                    
+                    // Now pop off the path segments.
                     for (int j = 0; j < popsToDo; j++)
                     {
                         this.cpath.RemoveAt(this.cpath.Count - 1);
+
                         if (this.debugOn)
                             log.DebugFormat("  pop {0}/{1}: {2}", i + 1, popsToDo, "/".join(this.cpath));
                     }
                 }
+
+                // Add new stuff.
                 this.cpath.AddRange(atom_path);
+
+                // Add new poplevel for the new stuff.
                 this.popLevels.Push(atom_path.Count);
+
                 if (this.debugOn)
                     debug(filename, ln, this.cpath, "<");
 
             }
-            else if (numtabs == this.pindent)
+            else if (numtabs == this.pindent) // Same level.
             {
+                // Same as above, but we're only going down one indent.
                 var levelsToPop = this.popLevels.Pop();
+
+                // Pop off path segments.
                 for (int i = 0; i < levelsToPop; i++)
                     this.cpath.RemoveAt(this.cpath.Count - 1);
+
+                // New stuff
                 this.cpath.AddRange(atom_path);
+
+                // New poplevel.
                 this.popLevels.Push(atom_path.Count);
+
                 if (this.debugOn)
                     log.DebugFormat("popLevels: {0}", this.popLevels.Count);
                 if (this.debugOn)
