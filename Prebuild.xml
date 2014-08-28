@@ -34,7 +34,7 @@
 			</Options>
 		</Configuration> 
 		
-		<Project frameworkVersion="v4_0" name="LibOpenBYOND" path="LibOpenBYOND" type="Library">
+		<Project frameworkVersion="v4_0" name="LibOpenBYOND" path="LibOpenBYOND" type="Library" rootNamespace="OpenBYOND">
 			<Configuration name="Debug" platform="x64">
 				<Options>
 					<OutputPath>../bin/</OutputPath>
@@ -67,7 +67,7 @@
 		</Project>
 		
 		
-		<Project frameworkVersion="v4_0" name="OpenBYONDClient" path="OpenBYONDClient" type="WinExe">
+		<Project frameworkVersion="v4_0" name="OpenBYONDClient" path="OpenBYONDClient" type="WinExe" rootNamespace="OpenBYOND.Client">
 			<Configuration name="Debug" platform="x64">
 				<Options>
 					<OutputPath>../bin/</OutputPath>

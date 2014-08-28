@@ -2,7 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using log4net;
 
-namespace OpenBYOND
+namespace OpenBYOND.Client
 {
     /// <summary>
     /// This is the main type for your game

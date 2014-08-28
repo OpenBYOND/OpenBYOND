@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 #endregion
 
-namespace OpenBYOND
+namespace OpenBYOND.Client
 {
     /// <summary>
     /// The main class.

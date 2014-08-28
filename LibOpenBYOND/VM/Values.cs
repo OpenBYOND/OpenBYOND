@@ -23,27 +23,27 @@ namespace OpenBYOND.VM
         /// <summary>
         /// BYOND type of this value.
         /// </summary>
-        BYONDType type = null;
+        public BYONDType type = null;
 
         /// <summary>
         /// Inherited from 
         /// </summary>
-        bool inherited = false;
+        public bool inherited = false;
 
         /// <summary>
         ///  /var/?
         /// </summary>
-        bool declarative = false;
+        public bool declarative = false;
 
         /// <summary>
         /// global, const, etc.
         /// </summary>
-        SpecialValueFlags special = SpecialValueFlags.NONE;
+        public SpecialValueFlags special = SpecialValueFlags.NONE;
 
         /// <summary>
         /// Size of /list
         /// </summary>
-        int size = 0;
+        public int size = 0;
     }
 
     public class BYONDValue<T> : BYONDValue

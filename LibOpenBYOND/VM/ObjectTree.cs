@@ -61,8 +61,9 @@ namespace OpenBYOND.VM
 
         int pindent = 0;  // Previous Indent
         int ignoreStartIndent = -1;
-        bool debugOn = true;
-        bool ignoreDebugOn = true;
+
+        public bool debugOn = true;
+        public bool ignoreDebugOn = true;
 
         bool LeavePreprocessorDirectives = false;
 
