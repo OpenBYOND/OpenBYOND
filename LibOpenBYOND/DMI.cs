@@ -312,17 +312,19 @@ namespace OpenBYOND
         {
             IconFrame f = GetIconState(state, movement).GetFrame(frame, dir);
 
-            SpriteBatch sb = new SpriteBatch(game.GraphicsDevice);
-            //Console.WriteLine(f.rect.X + " " + f.rect.Y);
-            //game.GraphicsDevice.Clear(Color.White);
-            sb.Begin();
-            if (texture == null)
+            using (SpriteBatch sb = new SpriteBatch(game.GraphicsDevice))
             {
-                texture = Texture2D.FromStream(game.GraphicsDevice, new FileStream(FileName, FileMode.Open));
-                log.DebugFormat("Loaded Texture2D {0}", FileName);
+                //Console.WriteLine(f.rect.X + " " + f.rect.Y);
+                //game.GraphicsDevice.Clear(Color.White);
+                sb.Begin();
+                if (texture == null)
+                {
+                    texture = Texture2D.FromStream(game.GraphicsDevice, new FileStream(FileName, FileMode.Open));
+                    log.DebugFormat("Loaded Texture2D {0}", FileName);
+                }
+                sb.Draw(texture, offset, f.rect, Color.White);
+                sb.End();
             }
-            sb.Draw(texture, offset, f.rect, Color.White);
-            sb.End();
             return sb;
         }
     }
