@@ -27,7 +27,7 @@ namespace OpenBYOND.World
         public Atom default_turf = null;
 
         public World()
-            : base()
+            : base("/reserved/world")
         {
         }
 

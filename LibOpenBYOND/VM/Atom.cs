@@ -59,11 +59,34 @@ namespace OpenBYOND.VM
         private Dictionary<string, NativeAtomProperty> NativeProperties = new Dictionary<string, NativeAtomProperty>();
 
         /// <summary>
+        /// Yes, type in BYOND is mutable.  How fucking dumb.
+        /// </summary>
+        public BYONDType Type = null;
+
+        /// <summary>
+        /// File this was defined in.
+        /// </summary>
+        public string Filename = "";
+
+        /// <summary>
+        /// Line of file this was defined in.
+        /// </summary>
+        public int Line = 0;
+
+        internal Atom()
+            : this("", false)
+        {
+            // Used internally for simple types.  Don't use this or I will slap you.
+        }
+
+        /// <summary>
         /// Instantiate an atom.
         /// </summary>
         /// <param name="makeInitial">Create InitialProperties?</param>
-        public Atom(bool makeInitial = true)
+        public Atom(string path, bool makeInitial = true)
         {
+            this.Type = new BYONDType(path);
+
             if (makeInitial)
                 InitialProperties = new Dictionary<string, Atom>(Properties); // Make copy.
 
@@ -73,8 +96,8 @@ namespace OpenBYOND.VM
                 foreach (AtomPropertyAttribute apa in prop.GetCustomAttributes(typeof(AtomPropertyAttribute), true))
                 {
                     NativeAtomProperty nap = new NativeAtomProperty(this);
-                    nap.CSProperty=prop;
-                    nap.DMProperty=apa.Name!=null ? apa.Name : prop.Name;
+                    nap.CSProperty = prop;
+                    nap.DMProperty = apa.Name != null ? apa.Name : prop.Name;
                     NativeProperties[nap.DMProperty] = nap;
 
                     log.DebugFormat("Mapped C# property {0} to atom property {1}.", prop.Name, nap.DMProperty);
@@ -82,10 +105,12 @@ namespace OpenBYOND.VM
             }
         }
 
-        /// <summary>
-        /// Yes, type in BYOND is mutable.  How fucking dumb.
-        /// </summary>
-        public string BYONDType { get; set; }
+        public Atom(string npath, string filename, int ln)
+            : this(npath)
+        {
+            this.Filename = filename;
+            this.Line = ln;
+        }
 
         /// <summary>
         /// Get a property as a simpler type.  

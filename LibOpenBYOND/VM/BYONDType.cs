@@ -16,5 +16,11 @@ namespace OpenBYOND.VM
         /// Can be fucked with by scripts.
         /// </summary>
         bool mutable = true;
+
+        public BYONDType(string path, bool mutable = true)
+        {
+            this.type = path.Split(new string[] { "/" }, StringSplitOptions.None);
+            this.mutable = mutable;
+        }
     }
 }

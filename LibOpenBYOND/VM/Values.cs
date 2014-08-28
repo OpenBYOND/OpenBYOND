@@ -33,7 +33,7 @@ namespace OpenBYOND.VM
         /// <summary>
         ///  /var/?
         /// </summary>
-        bool declaritive = false;
+        bool declarative = false;
 
         /// <summary>
         /// global, const, etc.
