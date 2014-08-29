@@ -50,12 +50,6 @@ namespace OpenBYOND
             return dmi.GetSpriteBatch(state, game, offset, dir, frame, movement);
         }
 
-        public static void DrawSpriteBatch(SpriteBatch sb, Game game, string icon, string state, Vector2 offset, Direction dir = Direction.SOUTH, uint frame = 0, bool movement = false)
-        {
-            DMI dmi = GetDMI(icon);
-            dmi.DrawSpriteBatch(sb, state, game, offset, dir, frame, movement);
-        }
-
         public static void Preload(string file)
         {
             file = Path.GetFullPath(file);
