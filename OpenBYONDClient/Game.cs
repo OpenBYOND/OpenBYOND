@@ -17,7 +17,8 @@ namespace OpenBYOND.Client
         Direction[] Wiggle = new[] {
             Direction.WEST,
             Direction.SOUTH,
-            Direction.EAST
+            Direction.EAST,
+            Direction.SOUTH
         };
 
         public OpenBYONDGame()
