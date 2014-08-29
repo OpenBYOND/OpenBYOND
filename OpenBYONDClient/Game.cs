@@ -17,8 +17,7 @@ namespace OpenBYOND.Client
         Direction[] Wiggle = new[] {
             Direction.WEST,
             Direction.SOUTH,
-            Direction.EAST,
-            Direction.SOUTH,
+            Direction.EAST
         };
 
         public OpenBYONDGame()
@@ -74,6 +73,17 @@ namespace OpenBYOND.Client
         {
             // TODO: Add your update logic here
 
+            // Every 30 ticks...
+            // TODO: Make it every 3 seconds (BYOND: 1 tick = 0.1 second)
+            if ((tick++ % 30) == 0)
+            {
+                cdir = (cdir + 1) % Wiggle.Length;
+            }
+            else
+            {
+                SuppressDraw();
+            }
+
             base.Update(gameTime);
         }
 
@@ -84,10 +94,6 @@ namespace OpenBYOND.Client
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
-            // Every 30 ticks...
-            if((tick++ % 30)==0) {
-                cdir = (cdir+1) % Wiggle.Length;
-            }
 
             DMIManager.GetSpriteBatch(this, "TestFiles/human.dmi",    "fatbody_s", new Vector2(32f, 32f), dir: Wiggle[cdir]);
             DMIManager.GetSpriteBatch(this, "TestFiles/spacerat.dmi", "rat_brown", new Vector2(64f, 32f), dir: Wiggle[cdir]);
