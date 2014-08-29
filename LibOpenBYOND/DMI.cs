@@ -328,5 +328,16 @@ namespace OpenBYOND
             }
             
         }
+
+        public void DrawSpriteBatch(SpriteBatch sb, string state, Game game, Vector2 offset, Direction dir = Direction.SOUTH, uint frame = 0, bool movement = false)
+        {
+            IconFrame f = GetIconState(state, movement).GetFrame(frame, dir);
+            if (texture == null)
+            {
+                texture = Texture2D.FromStream(game.GraphicsDevice, new FileStream(FileName, FileMode.Open));
+                log.DebugFormat("Loaded Texture2D {0}", FileName);
+            }
+            sb.Draw(texture, offset, f.rect, Color.White);
+        }
     }
 }
