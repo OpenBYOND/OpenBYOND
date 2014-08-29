@@ -19,8 +19,18 @@ namespace OpenBYOND.VM
 
         public BYONDType(string path, bool mutable = true)
         {
-            this.type = path.Split(new string[] { "/" }, StringSplitOptions.None);
+            this.type = path.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries); // Dump empty entries. (Beginning slash, double slashes)
             this.mutable = mutable;
+        }
+
+        public string[] GetPathSegments()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override string ToString()
+        {
+            return "/" + ("/".join(type));
         }
     }
 }

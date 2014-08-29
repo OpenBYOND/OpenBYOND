@@ -29,6 +29,102 @@ namespace OpenBYOND.VM
         }
     }
 
+    public class AtomProperties
+    {
+        /// <summary>
+        /// Use the GetProperty function to get this as a simple type.
+        /// 
+        /// TODO: Just link to the type def sitting in the object tree.
+        /// </summary>
+        private Dictionary<string, Atom> properties = new Dictionary<string, Atom>();
+
+        /// <summary>
+        /// Properties that have been changed from the original.
+        /// </summary>
+        private Dictionary<string, Atom> changedProperties = new Dictionary<string, Atom>();
+
+        private Atom owner;
+
+        internal AtomProperties(Atom a)
+        {
+            this.owner = a;
+        }
+
+        public Atom this[string key]
+        {
+            get
+            {
+                if (changedProperties.ContainsKey(key))
+                    return changedProperties[key];
+                return properties[key];
+            }
+            set
+            {
+                changedProperties[key] = value;
+            }
+        }
+
+        internal void ClearDeltas()
+        {
+            properties = new Dictionary<string, Atom>(changedProperties);
+            changedProperties.Clear();
+        }
+
+        internal T GetProperty<T>(string key)
+        {
+            Atom a = null;
+            if (!changedProperties.TryGetValue(key, out a))
+            {
+                if (!properties.TryGetValue(key, out a))
+                {
+                    throw new KeyNotFoundException(string.Format("Property {0} does not exist in {1}.", key, owner.GetName()));
+                }
+            }
+            return (T)Utils.SimplifyProperty(typeof(T), a);
+        }
+
+        internal T GetProperty<T>(string key, T defaultValue)
+        {
+            Atom a = null;
+            if (!changedProperties.TryGetValue(key, out a))
+            {
+                if (!properties.TryGetValue(key, out a))
+                {
+                    return defaultValue;
+                }
+            }
+            return (T)Utils.SimplifyProperty(typeof(T), a);
+        }
+
+        internal void SetProperty<T>(string key, T val)
+        {
+            Atom a = null;
+            if (val.GetType() == typeof(Atom))
+            {
+                object o = val;
+                a = (Atom)o;
+            }
+            else
+            {
+                a = new BYONDValue<T>(val);
+            }
+
+            changedProperties[key] = a;
+        }
+
+        internal string[] GetKeys(bool sorted = false)
+        {
+            List<string> keys = properties.Keys.ToList();
+            if (sorted) keys.Sort();
+            return keys.ToArray();
+        }
+
+        internal bool ContainsKey(string key)
+        {
+            return changedProperties.ContainsKey(key) || properties.ContainsKey(key);
+        }
+    }
+
     /// <summary>
     /// Your basic object in the world.  _Can_ have a loc.  Turfs also count.
     /// </summary>
@@ -42,14 +138,9 @@ namespace OpenBYOND.VM
         public int ID;
 
         /// <summary>
-        /// Use the GetProperty function to get this as a simple type.
+        /// Properties.
         /// </summary>
-        public Dictionary<string, Atom> Properties = new Dictionary<string, Atom>();
-
-        /// <summary>
-        /// Used for initial().  Copied after compile.
-        /// </summary>
-        public Dictionary<string, Atom> InitialProperties = new Dictionary<string, Atom>();
+        public AtomProperties Properties;
 
         /// <summary>
         /// DO NOT FUCK WITH THIS.
@@ -57,6 +148,13 @@ namespace OpenBYOND.VM
         /// Set by AtomPropertyAttribute.
         /// </summary>
         private Dictionary<string, NativeAtomProperty> NativeProperties = new Dictionary<string, NativeAtomProperty>();
+
+        /// <summary>
+        /// Used in the Object Tree.
+        /// 
+        /// TODO:  Make <string,string>
+        /// </summary>
+        internal Dictionary<string, Atom> Children = new Dictionary<string, Atom>();
 
         /// <summary>
         /// Yes, type in BYOND is mutable.  How fucking dumb.
@@ -73,10 +171,18 @@ namespace OpenBYOND.VM
         /// </summary>
         public int Line = 0;
 
+        /// <summary>
+        /// Object Tree stuff.
+        /// </summary>
+        public Atom Parent;
+
+        private bool Inherited;
+        private bool ob_inherited;
+
         internal Atom()
             : this("", false)
         {
-            // Used internally for simple types.  Don't use this or I will slap you.
+            // Used internally for simple types and tree stuff.  Don't use this or I will slap you.
         }
 
         /// <summary>
@@ -85,10 +191,11 @@ namespace OpenBYOND.VM
         /// <param name="makeInitial">Create InitialProperties?</param>
         public Atom(string path, bool makeInitial = true)
         {
+            Properties = new AtomProperties(this);
             this.Type = new BYONDType(path);
 
             if (makeInitial)
-                InitialProperties = new Dictionary<string, Atom>(Properties); // Make copy.
+                Properties.ClearDeltas();
 
             // Build NativeProperties mappings
             foreach (PropertyInfo prop in GetType().GetProperties())
@@ -122,23 +229,13 @@ namespace OpenBYOND.VM
         /// <returns></returns>
         public T GetProperty<T>(string key)
         {
-            Atom a = null;
-            if (!Properties.TryGetValue(key, out a))
-            {
-                throw new KeyNotFoundException(string.Format("Property {0} does not exist in {1}.", key, GetName()));
-            }
-            return (T)Utils.SimplifyProperty(typeof(T), a);
+            return Properties.GetProperty<T>(key);
         }
 
         // I don't know why I made this.
         public T GetProperty<T>(string key, T defaultValue)
         {
-            Atom a = null;
-            if (!Properties.TryGetValue(key, out a))
-            {
-                return defaultValue;
-            }
-            return (T)Utils.SimplifyProperty(typeof(T), a);
+            return Properties.GetProperty<T>(key, defaultValue);
         }
 
         /// <summary>
@@ -149,18 +246,7 @@ namespace OpenBYOND.VM
         /// <param name="val">Value</param>
         public void SetProperty<T>(string key, T val)
         {
-            Atom a = null;
-            if (val.GetType() == typeof(Atom))
-            {
-                object o = val;
-                a = (Atom)o;
-            }
-            else
-            {
-                a = new BYONDValue<T>(val);
-            }
-
-            Properties[key] = a;
+            Properties.SetProperty<T>(key, val);
         }
 
         public string GetName()
@@ -174,7 +260,32 @@ namespace OpenBYOND.VM
         {
             return GetName();
         }
+
+        internal void InheritProperties()
+        {
+            //if self.ob_inherited: return
+            // debugInheritance=self.path in ('/area','/obj','/mob','/atom/movable','/atom')
+            if (this.Parent != null)
+            {
+                if (this.Parent.ob_inherited) return;
+                string[] keys = Parent.Properties.GetKeys(sorted: true);
+                foreach (string key in keys)
+                {
+                    Atom value = Parent.Properties[key];//.copy()
+                    if (!Properties.ContainsKey(key))
+                    {
+                        Properties[key] = value;
+                        Properties[key].Inherited = true;
+                        // if debugInheritance:print('  {0}[{2}] -> {1}'.format(self.parent.path,self.path,key))
+                    }
+                }
+            }
+            // assert 'name' in self.properties
+            this.ob_inherited = true;
+            foreach (string k in this.Children.Keys)
+            {
+                this.Children[k].InheritProperties();
+            }
+        }
     }
-
-
 }

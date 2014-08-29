@@ -18,4 +18,12 @@ namespace OpenBYOND
             return string.Join(separator, E);
         }
     }
+
+    public static class ListExtensions
+    {
+        public static void Prepend<T>(this List<T> L, T i)
+        {
+            L.Insert(0, i);
+        }
+    }
 }

@@ -48,5 +48,19 @@ namespace OpenBYOND
         {
             return ((BYONDValue<int>)a).Value;
         }
+
+        /// <summary>
+        /// WHAR MY OPERATOR EXTENSION C#
+        /// WHAR
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static IEnumerable<T> ConcatLists<T>(IEnumerable<T> a, IEnumerable<T> b)
+        {
+            var newlist = new List<T>(a);
+            newlist.AddRange(b);
+            return newlist;
+        }
     }
 }

@@ -38,7 +38,7 @@ namespace OpenBYOND.VM
         /// <summary>
         /// global, const, etc.
         /// </summary>
-        public SpecialValueFlags special = SpecialValueFlags.NONE;
+        public string special = null;
 
         /// <summary>
         /// Size of /list
@@ -74,6 +74,14 @@ namespace OpenBYOND.VM
     /// </summary>
     public class BYONDString : BYONDValue<string>
     {
+
+        public BYONDString(string val, string filename="", int ln=0)
+        {
+            // TODO: Complete member initialization
+            this._value = val;
+            this.filename = filename;
+            this.line = ln;
+        }
         /// <summary>
         /// Escape a string.
         /// </summary>
@@ -95,6 +103,13 @@ namespace OpenBYOND.VM
 
     public class BYONDFileRef : BYONDValue<string>
     {
+        public BYONDFileRef(string val, string filename = "", int ln = 0)
+        {
+            this._value = val;
+            this.filename = filename;
+            this.line = ln;
+        }
+
         public DMI GetDMI()
         {
             return DMIManager.GetDMI(Value);
@@ -103,6 +118,41 @@ namespace OpenBYOND.VM
         public override string ToString()
         {
             return string.Format("\'{0}\'", Value);
+        }
+    }
+
+    public class BYONDUnhandledValue : BYONDValue<string>
+    {
+        public BYONDUnhandledValue(string val, string filename = "", int ln = 0)
+        {
+            this._value = val;
+            this.filename = filename;
+            this.line = ln;
+        }
+
+        public override string ToString()
+        {
+            return string.Format("/* ???: {0} */", Value);
+        }
+    }
+
+    public class BYONDNumber : BYONDValue<float>
+    {
+        public BYONDNumber(float val, string filename = "", int ln = 0)
+        {
+            this._value = val;
+            this.filename = filename;
+            this.line = ln;
+        }
+    }
+
+    public class BYONDNull : BYONDValue
+    {
+        public BYONDNull(string filename = "", int ln = 0)
+        {
+            this._value = null;
+            this.filename = filename;
+            this.line = ln;
         }
     }
 
