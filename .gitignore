@@ -161,6 +161,9 @@ Backup*/
 UpgradeLog*.XML
 UpgradeLog*.htm
 
+# MonoDevelop userprefs
+*.userprefs
+
 # SQL Server files
 *.mdf
 *.ldf
@@ -183,3 +186,6 @@ FakesAssemblies/
 /*.sln
 /bin/OpenBYONDClient.vshost.exe
 /bin/OpenBYONDClient.vshost.exe.manifest
+
+# Vim swp files
+*.swp
