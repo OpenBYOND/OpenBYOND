@@ -11,7 +11,19 @@ namespace OpenBYOND.Client
     /// </summary>
     public class OpenBYONDGame : Game
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof(Utils));
+        private static readonly ILog log = LogManager.GetLogger(typeof (Utils));
+        private int view_range = 7; // starting from the tile you're standing on, 7 tiles in each diretion is the default.
+
+        public int VIEWRANGE
+        {
+            get { return view_range; }
+            set
+            {
+                if (value < 1)
+                    value = 1;
+                view_range = value;
+            }
+        }
         public SpriteBatch spriteBatch;
         public int drawCount = 0;
         GraphicsDeviceManager graphics;
@@ -101,7 +113,8 @@ namespace OpenBYOND.Client
             GraphicsDevice.Clear(Color.White);
             Texture2D texture1px = new Texture2D(graphics.GraphicsDevice, 1, 1);
             texture1px.SetData(new Color[] {Color.Black});
-                        
+            var adjustedrange = (view_range*2 + 1)*32;
+            GraphicsDevice.Viewport = new Viewport(0,0,adjustedrange,adjustedrange);          
             spriteBatch.Begin();
             
             for (float x = -30; x < 30; x++)
