@@ -176,8 +176,8 @@ namespace OpenBYOND.VM
         /// </summary>
         public Atom Parent;
 
-        private bool Inherited;
-        private bool ob_inherited;
+        private bool Inherited=false;
+        private bool ob_inherited=false;
 
         internal Atom()
             : this("", false)

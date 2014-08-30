@@ -1,8 +1,8 @@
-#region Using Statements
 using System;
 using System.Collections.Generic;
 using System.Linq;
-#endregion
+using Mono.Options;
+using OpenBYOND.VM;
 
 namespace OpenBYOND.Client
 {
@@ -15,10 +15,28 @@ namespace OpenBYOND.Client
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
+            OptionSet argparser = new OptionSet() { 
+                {"load-dme=", v => LoadObjectTreeFrom(v)}
+            };
+            argparser.Parse(args);
             using (var game = new OpenBYONDGame())
                 game.Run();
+        }
+
+        private static void LoadObjectTreeFrom(string file)
+        {
+            DME dme = new DME();
+            dme.LoadFile(file);
+
+            ObjectTree otr = new ObjectTree();
+            foreach (string filename in dme.Files)
+            {
+                if(filename.EndsWith(".dm"))
+                    otr.ProcessFile(filename);
+            }
+            Environment.Exit(0);
         }
     }
 }

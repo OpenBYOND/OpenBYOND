@@ -324,8 +324,8 @@ namespace OpenBYOND
                 }
                 sb.Draw(texture, offset, f.rect, Color.White);
                 sb.End();
+                return sb;
             }
-            return sb;
         }
     }
 }
