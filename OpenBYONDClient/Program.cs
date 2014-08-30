@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Options;
 using OpenBYOND.VM;
+using log4net;
 
 namespace OpenBYOND.Client
 {
@@ -11,6 +12,8 @@ namespace OpenBYOND.Client
     /// </summary>
     public static class Program
     {
+        private static readonly ILog log = LogManager.GetLogger(typeof(Utils));
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -27,6 +30,8 @@ namespace OpenBYOND.Client
 
         private static void LoadObjectTreeFrom(string file)
         {
+            log.Info("Attempting object tree load...");
+
             DME dme = new DME();
             dme.LoadFile(file);
 

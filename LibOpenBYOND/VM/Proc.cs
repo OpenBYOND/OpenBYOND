@@ -8,6 +8,8 @@ namespace OpenBYOND.VM
     public class Proc : Atom
     {
         private string[] procArgs;
+        public bool definition;
+        public string origpath;
 
         public Proc(string path, string[] procArgs, string filename, int ln)
         {
