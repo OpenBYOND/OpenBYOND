@@ -103,7 +103,7 @@ namespace OpenBYOND.Client
             texture1px.SetData(new Color[] {Color.Black});
                         
             spriteBatch.Begin();
-            var index = Array.IndexOf(batchPool, spriteBatch);
+            
             for (float x = -30; x < 30; x++)
             {
                 Rectangle rectangle = new Rectangle((int)(0 + x * 32), 0, 1, 800);
