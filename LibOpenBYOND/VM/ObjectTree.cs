@@ -63,6 +63,8 @@ namespace OpenBYOND.VM
 
         public bool DebugIgnore = false;
         public bool DebugContext = false;
+        public bool DebugPreprocessing = false;
+
         public bool LeavePreprocessorDirectives = false;
 
         List<string> InProc = new List<string>(); // Not used ...?
@@ -81,6 +83,7 @@ namespace OpenBYOND.VM
         int ignoreStartIndent = -1; // Starting indent of ignore block
         private bool contextDebugOn = false; // Current state of context debugging
         private bool ignoreDebugOn = false; // Current state of ignore debugging
+        private bool ppcDebugOn = false;
         Proc loadingProc = null; // Current proc being loaded
         private string comment; // Current comment
         private string lineBeforePreprocessing; // Line prior to preprocessing
@@ -109,7 +112,8 @@ namespace OpenBYOND.VM
         // Indent debugging.
         private void debug(string filename, int line, List<string> path, string message)
         {
-            log.DebugFormat("{0}:{1}: {2} - {3}", filename, line, "/".join(path), message);
+            if (contextDebugOn)
+                log.DebugFormat("{0}:{1}: {2} - {3}", filename, line, "/".join(path), message);
         }
 
         private Atom ProcessAtom(string filename, int ln, string line, string atom, List<string> atom_path, int numtabs, string[] procArgs = null)
@@ -401,8 +405,9 @@ namespace OpenBYOND.VM
             this.popLevels.Clear();
             this.pindent = 0;
             this.ignoreLevel.Clear();
-            this.contextDebugOn = DebugContext;
-            this.ignoreDebugOn = DebugIgnore;
+            this.contextDebugOn = DebugContext; //|| filename.EndsWith("Chemistry-Machinery.dm");
+            this.ignoreDebugOn = DebugIgnore; //|| filename.EndsWith("Chemistry-Machinery.dm");
+            this.ppcDebugOn = DebugPreprocessing;
             this.ignoreStartIndent = -1;
             this.loadingProc = null;
             this.comment = "";
@@ -435,7 +440,7 @@ namespace OpenBYOND.VM
                     else
                     {
                         line = cline + line;
-                        if (cline != "")
+                        if ( ignoreDebugOn &&cline != "")
                             log.DebugFormat("{0}:{1}: Combined line with prior line. {2}", filename, ln, line);
                         cline = "";
                     }
@@ -546,13 +551,15 @@ namespace OpenBYOND.VM
                     {
                         if (line.EndsWith("\\")) continue;
                         var tokenChunks = line.Split('#');
-                        tokenChunks = tokenChunks[1].Split();
+                        tokenChunks = tokenChunks[1].Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
                         var directive = tokenChunks[0];
 
+                        //if (line.Contains("MAX_PILL_SPRITE"))
+                        //    throw new Exception("MAX PILL SPRITE");
                         if (directive == "define")
                         {
                             // //define SOMETHING Value
-                            var defineChunks = new List<string>(line.Split(new char[] { ' ', '\t' }, 3));
+                            var defineChunks = line.Split(new char[] { ' ', '\t' }, 3, StringSplitOptions.RemoveEmptyEntries).ToList();
                             if (defineChunks.Count == 2)
                                 defineChunks.Add("1");
                             else if (defineChunks.Count == 3)
@@ -758,7 +765,7 @@ namespace OpenBYOND.VM
                     log.Warn(line);
                 }
 
-                if (str_size != "" && !int.TryParse(str_size,out size))
+                if (str_size != "" && !int.TryParse(str_size, out size))
                 {
                     log.WarnFormat("Failed to parse {0} as int.", str_size);
                     return;
@@ -808,6 +815,10 @@ namespace OpenBYOND.VM
                     prop = new Atom(typepath, filename, ln);//{declarative=declaration, special=special,size=size};
                 }
             }
+            else if (value == "null" || value == null)
+            {
+                prop = new BYONDNull(filename, ln) { type = new BYONDType(typepath), declarative = declaration, special = special, size = size };
+            }
             else if (value != null && value[0] == '"')
             {
                 prop = new BYONDString(value.Substring(1, value.Length - 1), filename, ln) { declarative = declaration, special = special, size = size };
@@ -815,10 +826,6 @@ namespace OpenBYOND.VM
             else if (value != null && value[0] == '\'')
             {
                 prop = new BYONDFileRef(value.Substring(1, value.Length - 1), filename, ln) { declarative = declaration, special = special, size = size };
-            }
-            else if (value == "null" || value == null)
-            {
-                prop = new BYONDNull(filename, ln) { type = new BYONDType(typepath), declarative = declaration, special = special, size = size };
             }
             else if (value != null && float.TryParse(value, out parseval))
             {
@@ -989,13 +996,17 @@ namespace OpenBYOND.VM
                         {
                             this.defineMatchers[key] = new Regex(@"\b" + key + @"\b");
                         }
-                        string newline = this.defineMatchers[key].Replace(currentChunk, value._value.ToString());
-                        if (newline != currentChunk)
+                        string newChunk = this.defineMatchers[key].Replace(currentChunk, value._value.ToString());
+                        if (newChunk != currentChunk)
                         {
-                            log.DebugFormat("RULE: {0}", key);
-                            log.DebugFormat("  OLD: {0}", line);
-                            log.DebugFormat("  PPD: {0}", newline);
-                            currentChunk = newline;
+
+                            if (ppcDebugOn)
+                            {
+                                log.DebugFormat("RULE: {0}", key);
+                                log.DebugFormat("  OLD: {0}", currentChunk);
+                                log.DebugFormat("  PPD: {0}", newChunk);
+                            }
+                            currentChunk = newChunk;
                             updatePPCs = true;
                         }
                     }

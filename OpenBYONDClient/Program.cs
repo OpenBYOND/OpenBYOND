@@ -41,6 +41,9 @@ namespace OpenBYOND.Client
                 if(filename.EndsWith(".dm"))
                     otr.ProcessFile(filename);
             }
+
+            log.Info("TREE LOAD COMPLETE");
+
             Environment.Exit(0);
         }
     }
