@@ -23,7 +23,7 @@ namespace OpenBYOND
 
     public class IconState
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof(Utils));
+        private static readonly ILog log = LogManager.GetLogger(typeof(IconState));
 
         /// <summary>
         /// Array of frames.  Index is math.
@@ -95,7 +95,7 @@ namespace OpenBYOND
     }
     public class DMI
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof(Utils));
+        private static readonly ILog log = LogManager.GetLogger(typeof(DMI));
 
         public Dictionary<string, IconState> states = new Dictionary<string, IconState>();
 

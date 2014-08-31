@@ -130,7 +130,7 @@ namespace OpenBYOND.VM
     /// </summary>
     public class Atom
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof(Utils));
+        private static readonly ILog log = LogManager.GetLogger(typeof(Atom));
 
         /// <summary>
         /// ID of the instance.

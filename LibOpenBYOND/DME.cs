@@ -15,7 +15,7 @@ namespace OpenBYOND
         public List<string> Files = new List<string>();
 
         private string rootDir = "";
-        private static readonly ILog log = LogManager.GetLogger(typeof(Utils));
+        private static readonly ILog log = LogManager.GetLogger(typeof(DME));
 
         /// <summary>
         /// Load a DME file.

@@ -12,7 +12,7 @@ namespace OpenBYOND.Client
     /// </summary>
     public static class Program
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof(Utils));
+        private static readonly ILog log = LogManager.GetLogger(typeof(Program));
 
         /// <summary>
         /// The main entry point for the application.
