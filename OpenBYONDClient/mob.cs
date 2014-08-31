@@ -124,7 +124,14 @@ namespace OpenBYOND.Client
                 next_move = gameTime.TotalGameTime.TotalSeconds + delay;
                 Console.WriteLine("X " + newpos.X + " Y " + newpos.Y);
             }
-
+            if (movingto != Vector2.Zero)
+            {
+                spritepos += movingto*1*(float)gameTime.ElapsedGameTime.TotalMilliseconds;
+            }
+            else
+            {
+                spritepos = position;
+            }
             //client.eye.Position = position;
             base.Update(gameTime);
         }
@@ -138,14 +145,7 @@ namespace OpenBYOND.Client
                 null,
                 null,
                 client.eye.Transform*/);
-            if (movingto != Vector2.Zero)
-            {
-                spritepos += movingto * 200F * ((float)gameTime.ElapsedGameTime.TotalSeconds);
-            }
-            else
-            {
-                spritepos = position;
-            }
+
             spritepos.X = (float)(spritepos.X);
             spritepos.Y = (float)(spritepos.Y);
 
