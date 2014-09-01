@@ -8,7 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace OpenBYOND.Client
 {
-    public class Mob : DrawableGameComponent, IFocusable
+    public class Mob
     {
         public string name = "Player";
         public string icon = "TestFiles/human.dmi";
@@ -27,10 +27,10 @@ namespace OpenBYOND.Client
         public Vector2 movingto;
         public Vector2 newpos;
         public double next_move = 0F;
-        public double delay = 0.1F;
+        public double movement_delay = 0.1F;
         private Vector2 spritepos;
 
-        public Mob(OpenBYONDGame game, Vector2 pos) : base(game)
+        public Mob(OpenBYONDGame game, Vector2 pos)
         {
             client = game;
             position = pos;
@@ -38,43 +38,15 @@ namespace OpenBYOND.Client
             
         }
 
-        public override void Update(GameTime gameTime)
+        public void MoveMe(GameTime gameTime)
         {
-            
-            if (movingto != Vector2.Zero)
-            {
-                switch (dir)
-                {
-                    case Direction.NORTH:
-                        if (spritepos.Y - position.Y < 5f)
-                            movingto = Vector2.Zero;
-                        break;
-                    case Direction.SOUTH:
-                        if (position.Y - spritepos.Y < 5F)
-                        {
-                            movingto = Vector2.Zero;
-                        }
-                        break;
-                    case Direction.EAST:
-                        if (position.X - spritepos.X < 5F)
-                        {
-                            movingto = Vector2.Zero;
-                        }
-                        break;
-                    case Direction.WEST:
-                        if (spritepos.X - position.X < 5f)
-                            movingto = Vector2.Zero;
-                        break;
-                }
-            }
             if (next_move > gameTime.TotalGameTime.TotalSeconds)
             {
                 //Console.WriteLine("next move = " + next_move + " time = " + gameTime.ElapsedGameTime.TotalSeconds);
                 //client.eye.Position = position;
-                base.Update(gameTime);
                 return;
             }
- 
+
             KeyboardState kb = Keyboard.GetState();
             if (kb.IsKeyDown(Keys.D) && next_move <= gameTime.TotalGameTime.TotalSeconds)
             {
@@ -85,7 +57,7 @@ namespace OpenBYOND.Client
                 position = newpos;
                 movingto.Normalize();
                 dir = Direction.EAST;
-                next_move = gameTime.TotalGameTime.TotalSeconds + delay;
+                next_move = gameTime.TotalGameTime.TotalSeconds + movement_delay;
                 Console.WriteLine("X " + newpos.X + " Y " + newpos.Y);
             }
             if (kb.IsKeyDown(Keys.S) && next_move <= gameTime.TotalGameTime.TotalSeconds)
@@ -97,7 +69,7 @@ namespace OpenBYOND.Client
                 position = newpos;
                 movingto.Normalize();
                 dir = Direction.SOUTH;
-                next_move = gameTime.TotalGameTime.TotalSeconds + delay;
+                next_move = gameTime.TotalGameTime.TotalSeconds + movement_delay;
                 Console.WriteLine("X " + newpos.X + " Y " + newpos.Y);
             }
             if (kb.IsKeyDown(Keys.A) && next_move <= gameTime.TotalGameTime.TotalSeconds)
@@ -109,7 +81,7 @@ namespace OpenBYOND.Client
                 position = newpos;
                 movingto.Normalize();
                 dir = Direction.WEST;
-                next_move = gameTime.TotalGameTime.TotalSeconds + delay;
+                next_move = gameTime.TotalGameTime.TotalSeconds + movement_delay;
                 Console.WriteLine("X " + newpos.X + " Y " + newpos.Y);
             }
             if (kb.IsKeyDown(Keys.W) && next_move <= gameTime.TotalGameTime.TotalSeconds)
@@ -121,30 +93,53 @@ namespace OpenBYOND.Client
                 position = newpos;
                 movingto.Normalize();
                 dir = Direction.NORTH;
-                next_move = gameTime.TotalGameTime.TotalSeconds + delay;
+                next_move = gameTime.TotalGameTime.TotalSeconds + movement_delay;
                 Console.WriteLine("X " + newpos.X + " Y " + newpos.Y);
             }
+        }
+        public void Update(GameTime gameTime)
+        {
             if (movingto != Vector2.Zero)
             {
-                spritepos += movingto*1*(float)gameTime.ElapsedGameTime.TotalMilliseconds;
+                switch (dir)
+                {
+                    case Direction.NORTH:
+                        if (spritepos.Y - position.Y < 1f)
+                            movingto = Vector2.Zero;
+                        break;
+                    case Direction.SOUTH:
+                        if (position.Y - spritepos.Y < 1F)
+                        {
+                            movingto = Vector2.Zero;
+                        }
+                        break;
+                    case Direction.EAST:
+                        if (position.X - spritepos.X < 1F)
+                        {
+                            movingto = Vector2.Zero;
+                        }
+                        break;
+                    case Direction.WEST:
+                        if (spritepos.X - position.X < 1f)
+                            movingto = Vector2.Zero;
+                        break;
+                }
+            }
+            MoveMe(gameTime);
+            if (movingto != Vector2.Zero)
+            {
+                spritepos += movingto *200F* (float)gameTime.ElapsedGameTime.TotalSeconds;
             }
             else
             {
                 spritepos = position;
             }
+            client.eye.Pos = spritepos;
             //client.eye.Position = position;
-            base.Update(gameTime);
         }
 
-        public override void Draw(GameTime gameTime)
+        public void Draw(SpriteBatch spriteBatch, GameTime gameTime)
         {
-            client.spriteBatch.Begin(/*SpriteSortMode.FrontToBack,
-                BlendState.AlphaBlend,
-                null,
-                null,
-                null,
-                null,
-                client.eye.Transform*/);
 
             spritepos.X = (float)(spritepos.X);
             spritepos.Y = (float)(spritepos.Y);
@@ -153,7 +148,7 @@ namespace OpenBYOND.Client
             DMIManager.DrawSpriteBatch(client.spriteBatch,client,icon,icon_state,spritepos,dir);
             
             client.spriteBatch.End();
-            base.Draw(gameTime);
+           
         }
     }
 }

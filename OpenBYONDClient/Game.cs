@@ -16,7 +16,7 @@ namespace OpenBYOND.Client
         private static readonly ILog log = LogManager.GetLogger(typeof (Utils));
         private int view_range = 7; // starting from the tile you're standing on, 7 tiles in each diretion is the default.
         public Mob mob;
-        //public Camera2D eye;
+        public Camera eye;
         public int VIEWRANGE
         {
             get { return view_range; }
@@ -45,11 +45,8 @@ namespace OpenBYOND.Client
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             mob = new Mob(this, new Vector2(0F, 0F));
-            //eye = new Camera2D(this);
-            //eye.Focus = mob;
-            //eye.Position = mob.Position;
-            Components.Add(mob);
-            //Components.Add(eye);
+            IsFixedTimeStep = true;
+            TargetElapsedTime = TimeSpan.FromSeconds(1.0f / 60.0f);
             IsMouseVisible = true;
         }
 
@@ -62,7 +59,8 @@ namespace OpenBYOND.Client
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-
+            eye = new Camera(base.GraphicsDevice.Viewport);
+            eye.Pos = mob.Position;
             base.Initialize();
 
         }
@@ -106,7 +104,7 @@ namespace OpenBYOND.Client
             {
                 cdir = (cdir + 1)%Wiggle.Length;
             }
-
+            mob.Update(gameTime);
             base.Update(gameTime);
         }
 
@@ -121,7 +119,7 @@ namespace OpenBYOND.Client
             texture1px.SetData(new Color[] {Color.Black});
             var adjustedrange = (view_range*2 + 1)*32;
             //GraphicsDevice.Viewport = new Viewport(0,0,adjustedrange,adjustedrange);
-            spriteBatch.Begin();
+            spriteBatch.Begin(SpriteSortMode.Deferred, null, null, null, null, null, eye.viewMatrix);
             
             var yy = 1;
             var ii = 1;
@@ -169,7 +167,7 @@ namespace OpenBYOND.Client
                 spriteBatch.Draw(texture1px, rectangle, Color.Black);
                 drawCount++;
             }
-            
+            mob.Draw(spriteBatch,gameTime);
             
             spriteBatch.End();
             //Console.WriteLine("SpriteBatch n = " + n + " had " + drawCount[n] + " calls this draw.");
