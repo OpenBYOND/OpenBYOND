@@ -23,14 +23,16 @@ namespace OpenBYOND.VM
             CSProperty.SetValue(atom, value, new object[0]);
         }
 
-        public void Get()
+        public Atom Get()
         {
-            CSProperty.GetValue(atom, new object[0]);
+            return (Atom)CSProperty.GetValue(atom, new object[0]);
         }
     }
 
     public class AtomProperties
     {
+        private static readonly ILog log = LogManager.GetLogger(typeof(AtomProperties));
+
         /// <summary>
         /// Use the GetProperty function to get this as a simple type.
         /// 
@@ -43,24 +45,50 @@ namespace OpenBYOND.VM
         /// </summary>
         private Dictionary<string, Atom> changedProperties = new Dictionary<string, Atom>();
 
+        /// <summary>
+        /// DO NOT FUCK WITH THIS.
+        /// 
+        /// Set by AtomPropertyAttribute.
+        /// </summary>
+        private Dictionary<string, NativeAtomProperty> nativeProperties = new Dictionary<string, NativeAtomProperty>();
+
         private Atom owner;
 
         internal AtomProperties(Atom a)
         {
             this.owner = a;
+
+            // Build NativeProperties mappings
+            foreach (PropertyInfo prop in owner.GetType().GetProperties())
+            {
+                foreach (AtomPropertyAttribute apa in prop.GetCustomAttributes(typeof(AtomPropertyAttribute), true))
+                {
+                    NativeAtomProperty nap = new NativeAtomProperty(owner);
+                    nap.CSProperty = prop;
+                    nap.DMProperty = apa.Name != null ? apa.Name : prop.Name;
+                    nativeProperties[nap.DMProperty] = nap;
+
+                    log.DebugFormat("Mapped C# property {0} to atom property {1}.", prop.Name, nap.DMProperty);
+                }
+            }
         }
 
         public Atom this[string key]
         {
             get
             {
+                if (nativeProperties.ContainsKey(key))
+                    return nativeProperties[key].Get();
                 if (changedProperties.ContainsKey(key))
                     return changedProperties[key];
                 return properties[key];
             }
             set
             {
-                changedProperties[key] = value;
+                if (nativeProperties.ContainsKey(key))
+                    nativeProperties[key].Set(value);
+                else
+                    changedProperties[key] = value;
             }
         }
 
@@ -73,11 +101,19 @@ namespace OpenBYOND.VM
         internal T GetProperty<T>(string key)
         {
             Atom a = null;
-            if (!changedProperties.TryGetValue(key, out a))
+            // If there's a binding, redirect Get to the property in question.
+            if (nativeProperties.ContainsKey(key))
             {
-                if (!properties.TryGetValue(key, out a))
+                a = nativeProperties[key].Get();
+            }
+            else
+            {
+                if (!changedProperties.TryGetValue(key, out a))
                 {
-                    throw new KeyNotFoundException(string.Format("Property {0} does not exist in {1}.", key, owner.GetName()));
+                    if (!properties.TryGetValue(key, out a))
+                    {
+                        throw new KeyNotFoundException(string.Format("Property {0} does not exist in {1}.", key, owner.GetName()));
+                    }
                 }
             }
             return (T)Utils.SimplifyProperty(typeof(T), a);
@@ -86,11 +122,19 @@ namespace OpenBYOND.VM
         internal T GetProperty<T>(string key, T defaultValue)
         {
             Atom a = null;
-            if (!changedProperties.TryGetValue(key, out a))
+            // If there's a binding, redirect Get to the property in question.
+            if (nativeProperties.ContainsKey(key))
             {
-                if (!properties.TryGetValue(key, out a))
+                a = nativeProperties[key].Get();
+            }
+            else
+            {
+                if (!changedProperties.TryGetValue(key, out a))
                 {
-                    return defaultValue;
+                    if (!properties.TryGetValue(key, out a))
+                    {
+                        return defaultValue;
+                    }
                 }
             }
             return (T)Utils.SimplifyProperty(typeof(T), a);
@@ -109,19 +153,23 @@ namespace OpenBYOND.VM
                 a = new BYONDValue<T>(val);
             }
 
-            changedProperties[key] = a;
+            if (nativeProperties.ContainsKey(key))
+                nativeProperties[key].Set(a);
+            else
+                changedProperties[key] = a;
         }
 
         internal string[] GetKeys(bool sorted = false)
         {
             List<string> keys = properties.Keys.ToList();
+            keys.AddRange(nativeProperties.Keys.ToList());
             if (sorted) keys.Sort();
             return keys.ToArray();
         }
 
         internal bool ContainsKey(string key)
         {
-            return changedProperties.ContainsKey(key) || properties.ContainsKey(key);
+            return nativeProperties.ContainsKey(key) || changedProperties.ContainsKey(key) || properties.ContainsKey(key);
         }
     }
 
@@ -141,13 +189,6 @@ namespace OpenBYOND.VM
         /// Properties.
         /// </summary>
         public AtomProperties Properties;
-
-        /// <summary>
-        /// DO NOT FUCK WITH THIS.
-        /// 
-        /// Set by AtomPropertyAttribute.
-        /// </summary>
-        private Dictionary<string, NativeAtomProperty> NativeProperties = new Dictionary<string, NativeAtomProperty>();
 
         /// <summary>
         /// Used in the Object Tree.
@@ -196,20 +237,6 @@ namespace OpenBYOND.VM
 
             if (makeInitial)
                 Properties.ClearDeltas();
-
-            // Build NativeProperties mappings
-            foreach (PropertyInfo prop in GetType().GetProperties())
-            {
-                foreach (AtomPropertyAttribute apa in prop.GetCustomAttributes(typeof(AtomPropertyAttribute), true))
-                {
-                    NativeAtomProperty nap = new NativeAtomProperty(this);
-                    nap.CSProperty = prop;
-                    nap.DMProperty = apa.Name != null ? apa.Name : prop.Name;
-                    NativeProperties[nap.DMProperty] = nap;
-
-                    log.DebugFormat("Mapped C# property {0} to atom property {1}.", prop.Name, nap.DMProperty);
-                }
-            }
         }
 
         public Atom(string npath, string filename, int ln)

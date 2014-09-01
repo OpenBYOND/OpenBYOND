@@ -8,6 +8,8 @@ namespace OpenBYOND.VM
 {
     /// <summary>
     /// Specifies which atom property to bind with.
+    /// 
+    /// This basically tells DM to send all property updates to the specified C# property, rather than to the standard user-defined collections in AtomProperties.
     /// </summary>
     public class AtomPropertyAttribute : Attribute
     {
