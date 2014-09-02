@@ -47,13 +47,20 @@
 			
 			<ReferencePath>../bin/</ReferencePath>
 			
-			<Reference name="ICSharpCode.SharpZipLib" path="../bin/" />
+			<Reference name="LibOpenBYOND" path="../bin/" />
+			
 			<Reference name="log4net" path="../bin/" />
+			<Reference name="Pngcs" path="../bin/" />
+			<Reference name="ICSharpCode.SharpZipLib" path="../bin/" />
+			
+			<!-- MonoGame -->
 			<Reference name="MonoGame.Framework" path="../bin/" />
 			<Reference name="OpenTK" path="../bin/" />
-			<Reference name="Pngcs" path="../bin/" />
 			<Reference name="Tao.Sdl" path="../bin/" />
-			<Reference name="LibOpenBYOND" path="../bin/" />
+			
+			<!-- Irony parsing framework. -->
+			<Reference name="Irony" path="../bin/" />
+			<Reference name="Irony.Interpreter" path="../bin/" />
 			
 			<Reference name="System" />
 			<Reference name="System.Core" />
@@ -79,12 +86,18 @@
 			
 			<ReferencePath>../bin/</ReferencePath>
 			
-			<Reference name="ICSharpCode.SharpZipLib" path="../bin/" />
 			<Reference name="log4net" path="../bin/" />
+			<Reference name="Pngcs" path="../bin/" />
+			<Reference name="ICSharpCode.SharpZipLib" path="../bin/" />
+			
+			<!-- MonoGame -->
 			<Reference name="MonoGame.Framework" path="../bin/" />
 			<Reference name="OpenTK" path="../bin/" />
-			<Reference name="Pngcs" path="../bin/" />
 			<Reference name="Tao.Sdl" path="../bin/" />
+			
+			<!-- Irony parsing framework. -->
+			<Reference name="Irony" path="../bin/" />
+			<Reference name="Irony.Interpreter" path="../bin/" />
 			
 			<Reference name="System" />
 			<Reference name="System.Core" />
