@@ -1,20 +1,14 @@
-﻿using OpenBYOND;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using NUnit.Framework;
 
-namespace Test
+namespace OpenBYOND.Test
 {
-    
-    
     /// <summary>
     ///This is a test class for DirUtilsTest and is intended
     ///to contain all DirUtilsTest Unit Tests
     ///</summary>
-    [TestClass()]
+    [TestFixture]
     public class DirUtilsTest
     {
-
-
         private TestContext testContextInstance;
 
         /// <summary>
@@ -67,7 +61,7 @@ namespace Test
         /// <summary>
         ///A test for GetDirIndex
         ///</summary>
-        [TestMethod()]
+        [Test]
         public void GetDirIndexTest()
         {
             Assert.AreEqual(0, DirUtils.GetDirIndex(Direction.SOUTH), "SOUTH did not produce 0");
@@ -79,7 +73,7 @@ namespace Test
         /// <summary>
         ///A test for GetDirFromString
         ///</summary>
-        [TestMethod()]
+        [Test]
         public void GetDirFromStringTest()
         {
             Assert.AreEqual(Direction.NORTH,DirUtils.GetDirFromString("NORTH"));
@@ -88,7 +82,7 @@ namespace Test
         /// <summary>
         ///A test for GetNameFromDir
         ///</summary>
-        [TestMethod()]
+        [Test]
         public void GetNameFromDirTest()
         {
             Direction dir = new Direction(); // TODO: Initialize to an appropriate value

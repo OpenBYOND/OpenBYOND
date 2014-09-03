@@ -1,10 +1,10 @@
 ﻿using OpenBYOND;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Test
+namespace OpenBYOND.Test
 {
 
 
@@ -12,7 +12,7 @@ namespace Test
     ///This is a test class for DMETest and is intended
     ///to contain all DMETest Unit Tests
     ///</summary>
-    [TestClass()]
+    [TestFixture]
     public class DMETest
     {
 
@@ -69,11 +69,11 @@ namespace Test
         /// <summary>
         ///A test for LoadFile
         ///</summary>
-        [TestMethod()]
-        [DeploymentItem("TestFiles","TestFiles")]
+        [Test]
+        //[DeploymentItem("TestFiles","TestFiles")]
         public void LoadFileTest()
         {
-            testContextInstance.WriteLine("CD: {0}", Environment.CurrentDirectory);
+            //testContextInstance.WriteLine("CD: {0}", Environment.CurrentDirectory);
 
             DME target = new DME();
             string filename = Path.Combine("TestFiles","Test.dme");
@@ -95,11 +95,11 @@ namespace Test
         /// <summary>
         ///A test for parseInclude
         ///</summary>
-        [TestMethod()]
-        [DeploymentItem("LibOpenBYOND.dll")]
+        [Test]
+        //[DeploymentItem("LibOpenBYOND.dll")]
         public void parseIncludeTest()
         {
-            DME_Accessor target = new DME_Accessor(); // TODO: Initialize to an appropriate value
+            DME target = new DME(); // TODO: Initialize to an appropriate value
             string line = "#include \"balls.txt\""; // TODO: Initialize to an appropriate value
             string expected = Path.GetFullPath(Path.Combine("balls.txt"));
             target.parseInclude(line);

@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
 using log4net;
 
@@ -42,7 +40,7 @@ namespace OpenBYOND
             log.DebugFormat("Loaded {0} files.", Files.Count);
         }
 
-        private void parseInclude(string line)
+        public void parseInclude(string line)
         {
             bool inString = false;
             string filename = "";

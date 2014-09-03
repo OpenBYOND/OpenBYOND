@@ -1,9 +1,7 @@
-﻿using OpenBYOND;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.IO;
+﻿using System.IO;
+using NUnit.Framework;
 
-namespace Test
+namespace OpenBYOND.Test
 {
     
     
@@ -11,7 +9,7 @@ namespace Test
     ///This is a test class for DMITest and is intended
     ///to contain all DMITest Unit Tests
     ///</summary>
-    [TestClass()]
+    [TestFixture]
     public class DMITest
     {
 
@@ -68,14 +66,14 @@ namespace Test
         /// <summary>
         ///A test for DMI Constructor
         ///</summary>
-        [TestMethod()]
-        [DeploymentItem("TestFiles/human.dmi", "TestFiles")]
+        [Test]
+        //[DeploymentItem("TestFiles/human.dmi", "TestFiles")]
         public void DMIConstructorTest()
         {
             string icon = Path.Combine("TestFiles","human.dmi");
             string icon_state = string.Empty; // TODO: Initialize to an appropriate value
             DMI target = new DMI(icon);
-            testContextInstance.WriteLine("width = {0}, height={1}", target.Width, target.Height);
+            //testContextInstance.WriteLine("width = {0}, height={1}", target.Width, target.Height);
         }
     }
 }
