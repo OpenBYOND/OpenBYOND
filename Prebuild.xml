@@ -138,9 +138,9 @@
 			<!-- Irony parsing framework. -->
 			<Reference name="Irony" path="../bin/" />
 			<Reference name="Irony.Interpreter" path="../bin/" />
-			
+
 			<!-- Unit Testing. -->
-			<Reference name="nunit.framework" />
+			<Reference name="nunit.framework" path="../bin/nunit/" />
 			
 			<Reference name="System" />
 			<Reference name="System.Core" />
