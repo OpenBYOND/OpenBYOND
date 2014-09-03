@@ -8,7 +8,6 @@ namespace OpenBYOND.Test
     ///This is a test class for IconStateTest and is intended
     ///to contain all IconStateTest Unit Tests
     ///</summary>
-    [TestFixture]
     public class IconStateTest
     {
 

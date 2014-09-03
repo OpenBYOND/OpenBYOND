@@ -9,7 +9,6 @@ namespace OpenBYOND.Test
     ///This is a test class for DMITest and is intended
     ///to contain all DMITest Unit Tests
     ///</summary>
-    [TestFixture]
     public class DMITest
     {
 

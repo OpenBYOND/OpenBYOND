@@ -6,7 +6,6 @@ namespace OpenBYOND.Test
     ///This is a test class for DirUtilsTest and is intended
     ///to contain all DirUtilsTest Unit Tests
     ///</summary>
-    [TestFixture]
     public class DirUtilsTest
     {
         private TestContext testContextInstance;
