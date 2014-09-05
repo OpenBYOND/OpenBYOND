@@ -128,7 +128,7 @@ namespace OpenBYOND.Client
             MoveMe(gameTime);
             if (movingto != Vector2.Zero)
             {
-                spritepos += movingto *200F* (float)gameTime.ElapsedGameTime.TotalSeconds;
+                spritepos += movingto *250F* (float)gameTime.ElapsedGameTime.TotalSeconds;
             }
             else
             {

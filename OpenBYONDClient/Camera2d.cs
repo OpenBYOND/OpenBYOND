@@ -8,7 +8,7 @@ public class Camera
 
     public Camera(Viewport clientRect)
     {
-        m_halfViewSize = new Vector2(clientRect.Width * 0.5f - 16, clientRect.Height * 0.5f - 16);
+        m_halfViewSize = new Vector2(clientRect.Width * 0.5f - 176, clientRect.Height * 0.5f - 16);
         UpdateViewMatrix();
     }
 
