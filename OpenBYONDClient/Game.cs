@@ -4,8 +4,6 @@ using System.Xml;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using log4net;
-using Microsoft.Xna.Framework.Input;
-
 
 namespace OpenBYOND.Client
 {
@@ -14,7 +12,7 @@ namespace OpenBYOND.Client
     /// </summary>
     public class OpenBYONDGame : Game
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof (Utils));
+        private static readonly ILog log = LogManager.GetLogger(typeof(OpenBYONDGame));
         private int view_range = 7; // starting from the tile you're standing on, 7 tiles in each diretion is the default.
         public Mob mob;
         public Camera2D eye;
@@ -84,7 +82,7 @@ namespace OpenBYOND.Client
         {
             log.Info("LoadContent()");
             spriteBatch = new SpriteBatch(GraphicsDevice);
- 
+
             // Create a new SpriteBatch, which can be used to draw textures.
             DMIManager.Preload("TestFiles/human.dmi");
             // TODO: use this.Content to load your game content here
@@ -133,11 +131,25 @@ namespace OpenBYOND.Client
             GraphicsDevice.Clear(Color.White);
             Texture2D texture1px = new Texture2D(graphics.GraphicsDevice, 1, 1);
             texture1px.SetData(new Color[] { Color.Black });
-            
-            
             //GraphicsDevice.Viewport = new Viewport(0,0,adjustedrange,adjustedrange);
             spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null, eye.InverseTransform);
-            
+            var adjustedrange = (view_range * 2 + 1) * 32;
+            GraphicsDevice.Viewport = new Viewport(0, 0, adjustedrange, adjustedrange);
+
+            for (float x = -30; x < 30; x++)
+            {
+                Rectangle rectangle = new Rectangle((int)(0 + x * 32), 0, 1, 800);
+                spriteBatch.Draw(texture1px, rectangle, Color.Black);
+                drawCount++;
+            }
+            for (float y = -30; y < 30; y++)
+            {
+                Rectangle rectangle = new Rectangle(0, (int)(0 + y * 32), 800, 1);
+                spriteBatch.Draw(texture1px, rectangle, Color.Black);
+                drawCount++;
+            }
+
+
             var yy = 1;
             var ii = 1;
             string[] states = new string[]{"floor", "white", "plating", "bar"};
@@ -145,6 +157,12 @@ namespace OpenBYOND.Client
             for (var i = 1; i <= 10000; i++)
             {
                 if (i % 256 == 0)
+                //DMIManager.GetSpriteBatch(this, "TestFiles/human.dmi", "fatbody_s", new Vector2(32f, 32f), dir: Wiggle[cdir]);
+                //DMIManager.GetSpriteBatch(this, "TestFiles/spacerat.dmi", "rat_brown", new Vector2(64f, 32f), dir: Wiggle[cdir]);
+                //DMIManager.DrawSpriteBatch(spriteBatch, this, "TestFiles/robots.dmi", "mommi", new Vector2(32f * (float)ii, 32f * (float)yy), dir: Wiggle[cdir]);
+                DMIManager.DrawSpriteBatch(spriteBatch, this, "TestFiles/robots.dmi", "mommi", new Vector2(32f * (float)ii, 32f * (float)yy), dir: Wiggle[cdir]);
+                drawCount++;
+                if (i % 20 == 0)
                 {
                     yy++;
                     ii = 1;

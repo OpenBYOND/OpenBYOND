@@ -16,12 +16,13 @@ namespace OpenBYOND.VM
 {
     public class ObjectTree
     {
-        Regex REGEX_TABS = new Regex(@"^(?<tabs>[\t\s]*)");
-        Regex REGEX_ATOMDEF = new Regex(@"^(?<tabs>\t*)(?<atom>[a-zA-Z0-9_/]+)\\{?\\s*$");
-        Regex REGEX_ABSOLUTE_PROCDEF = new Regex(@"^(?<tabs>\t*)(?<atom>[a-zA-Z0-9_/]+)/(?<proc>[a-zA-Z0-9_]+)\((?<args>.*)\)\\{?\s*$");
-        Regex REGEX_RELATIVE_PROCDEF = new Regex(@"^(?<tabs>\t*)(?<proc>[a-zA-Z0-9_]+)\((?<args>.*)\)\\{?\\s*$");
-        Regex REGEX_LINE_COMMENT = new Regex(@"//.*?$");
-        private static readonly ILog log = LogManager.GetLogger(typeof(Utils));
+        private static Regex REGEX_TABS = new Regex(@"^(?<tabs>[\t\s]*)", RegexOptions.Compiled);
+        private static Regex REGEX_ATOMDEF = new Regex(@"^(?<tabs>\t*)(?<atom>[a-zA-Z/_][a-zA-Z0-9_/]+)\{?\s*$", RegexOptions.Compiled);
+        private static Regex REGEX_ABSOLUTE_PROCDEF = new Regex(@"^(?<tabs>[\t]*)(?<atom>[a-zA-Z0-9_/]+)/(?<proc>[a-zA-Z0-9_]+)\((?<args>.*)\)\{?\s*$", RegexOptions.Compiled);
+        private static Regex REGEX_RELATIVE_PROCDEF = new Regex(@"^(?<tabs>[\t]*)(?<proc>[a-zA-Z0-9_]+)\((?<args>.*)\)\{?\s*$", RegexOptions.Compiled);
+        private static Regex REGEX_LINE_COMMENT = new Regex(@"//.*?$", RegexOptions.Compiled);
+
+        private static readonly ILog log = LogManager.GetLogger(typeof(ObjectTree));
 
         // Can only be modified by the VM.
         public static readonly string[] ReservedSubtrees = new string[]{
@@ -60,28 +61,33 @@ namespace OpenBYOND.VM
         /// </summary>
         Stack<int> popLevels = new Stack<int>();
 
-        List<string> InProc = new List<string>();
+        public bool DebugIgnore = false;
+        public bool DebugContext = false;
+        public bool DebugPreprocessing = false;
+
+        public bool LeavePreprocessorDirectives = false;
+
+        List<string> InProc = new List<string>(); // Not used ...?
         Stack<string> ignoreLevel = new Stack<string>();  // Block Comments
-        Dictionary<string, Regex> defineMatchers = new Dictionary<string, Regex>();
+        Dictionary<string, Regex> defineMatchers = new Dictionary<string, Regex>(); // Regexes of preprocessing defines.
         List<string> comments = new List<string>();
         Dictionary<string, string> fileLayouts = new Dictionary<string, string>();
 
+        // Tokens to be ignored.
         static Dictionary<string, string> ignoreTokens = new Dictionary<string, string>(){
             {"/*","*/"},  // /* */
             {"{\"","\"}"} // {" "}
         };
 
         int pindent = 0;  // Previous Indent
-        int ignoreStartIndent = -1;
-
-        public bool debugOn = true;
-        public bool ignoreDebugOn = true;
-
-        bool LeavePreprocessorDirectives = false;
-        Proc loadingProc = null;
-        private string comment;
-        private string lineBeforePreprocessing;
-        private string current_filename;
+        int ignoreStartIndent = -1; // Starting indent of ignore block
+        private bool contextDebugOn = false; // Current state of context debugging
+        private bool ignoreDebugOn = false; // Current state of ignore debugging
+        private bool ppcDebugOn = false;
+        Proc loadingProc = null; // Current proc being loaded
+        private string comment; // Current comment
+        private string lineBeforePreprocessing; // Line prior to preprocessing
+        private string current_filename; // Current file being worked on
 
         static ObjectTree()
         {
@@ -106,7 +112,8 @@ namespace OpenBYOND.VM
         // Indent debugging.
         private void debug(string filename, int line, List<string> path, string message)
         {
-            log.DebugFormat("{0}:{1}: {2} - {3}", filename, line, "/".join(path), message);
+            if (contextDebugOn)
+                log.DebugFormat("{0}:{1}: {2} - {3}", filename, line, "/".join(path), message);
         }
 
         private Atom ProcessAtom(string filename, int ln, string line, string atom, List<string> atom_path, int numtabs, string[] procArgs = null)
@@ -123,8 +130,8 @@ namespace OpenBYOND.VM
             if (numtabs > 0 && atom.Trim().StartsWith("/"))
                 return null;
 
-            if (debugOn)
-                log.DebugFormat("{} > {}", numtabs, line.TrimEnd());
+            if (contextDebugOn)
+                log.DebugFormat("{0} > {1}", numtabs, line.TrimEnd());
 
             // Global scope (no tabs)
             if (numtabs == 0)
@@ -140,7 +147,7 @@ namespace OpenBYOND.VM
                 this.popLevels = new Stack<int>();
                 this.popLevels.Push(this.cpath.Count);
 
-                if (this.debugOn)
+                if (this.contextDebugOn)
                     debug(filename, ln, this.cpath, "0 - " + string.Join("/", atom_path));
 
             }
@@ -152,13 +159,13 @@ namespace OpenBYOND.VM
                 // Add new poplevel with current path length.
                 this.popLevels.Push(atom_path.Count);
 
-                if (this.debugOn)
+                if (this.contextDebugOn)
                     debug(filename, ln, this.cpath, ">");
 
             }
             else if (numtabs < pindent) // Going down.
             {
-                if (this.debugOn)
+                if (this.contextDebugOn)
                     log.DebugFormat("({0} - {1})={2}: {3}", this.pindent, numtabs, this.pindent - numtabs, string.Join("/", this.cpath));
 
                 // This is complex as fuck, so bear with me.
@@ -173,7 +180,7 @@ namespace OpenBYOND.VM
                     // Pop a poplevel out, find out how many path chunks we need to remove.
                     var popsToDo = this.popLevels.Pop();
 
-                    if (this.debugOn)
+                    if (this.contextDebugOn)
                         log.DebugFormat(" pop {0} {1}", popsToDo, this.popLevels);
 
                     // Now pop off the path segments.
@@ -181,7 +188,7 @@ namespace OpenBYOND.VM
                     {
                         this.cpath.RemoveAt(this.cpath.Count - 1);
 
-                        if (this.debugOn)
+                        if (this.contextDebugOn)
                             log.DebugFormat("  pop {0}/{1}: {2}", i + 1, popsToDo, "/".join(this.cpath));
                     }
                 }
@@ -192,7 +199,7 @@ namespace OpenBYOND.VM
                 // Add new poplevel for the new stuff.
                 this.popLevels.Push(atom_path.Count);
 
-                if (this.debugOn)
+                if (this.contextDebugOn)
                     debug(filename, ln, this.cpath, "<");
 
             }
@@ -211,9 +218,9 @@ namespace OpenBYOND.VM
                 // New poplevel.
                 this.popLevels.Push(atom_path.Count);
 
-                if (this.debugOn)
+                if (this.contextDebugOn)
                     log.DebugFormat("popLevels: {0}", this.popLevels.Count);
-                if (this.debugOn)
+                if (this.contextDebugOn)
                     debug(filename, ln, this.cpath, ">");
             }
 
@@ -245,10 +252,10 @@ namespace OpenBYOND.VM
                     // if origpath != npath:
                     //    print(origpath,proc_def)
 
-                    //var proc = new Proc(npath, procArgs, filename, ln);
-                    //proc.origpath = origpath;
-                    //proc.definition = defs.Contains("proc");
-                    //this.Atoms[npath] = proc;
+                    var proc = new Proc(npath, procArgs, filename, ln);
+                    proc.origpath = origpath;
+                    proc.definition = defs.Contains("proc");
+                    this.Atoms[npath] = proc;
                 }
                 else
                 {
@@ -273,7 +280,7 @@ namespace OpenBYOND.VM
             {
                 Match m = REGEX_TABS.Match(code);
                 int numtabs = 0;
-                if (m != null)
+                if (m.Success)
                 {
                     numtabs = m.Groups["tabs"].Length;
                 }
@@ -398,8 +405,9 @@ namespace OpenBYOND.VM
             this.popLevels.Clear();
             this.pindent = 0;
             this.ignoreLevel.Clear();
-            this.debugOn = false;
-            this.ignoreDebugOn = false;
+            this.contextDebugOn = DebugContext; //|| filename.EndsWith("Chemistry-Machinery.dm");
+            this.ignoreDebugOn = DebugIgnore; //|| filename.EndsWith("Chemistry-Machinery.dm");
+            this.ppcDebugOn = DebugPreprocessing;
             this.ignoreStartIndent = -1;
             this.loadingProc = null;
             this.comment = "";
@@ -412,7 +420,7 @@ namespace OpenBYOND.VM
             {
                 int ln = 0;
                 ignoreLevel.Clear();
-
+                string cline = "";
                 while (f.Peek() != -1)
                 {
                     string line = f.ReadLine();
@@ -423,6 +431,19 @@ namespace OpenBYOND.VM
                     string nl = "";
 
                     line = line.TrimEnd();
+
+                    if (line.EndsWith("\\"))
+                    {
+                        cline += line.Substring(0, line.Length - 1);
+                        continue;
+                    }
+                    else
+                    {
+                        line = cline + line;
+                        if ( ignoreDebugOn &&cline != "")
+                            log.DebugFormat("{0}:{1}: Combined line with prior line. {2}", filename, ln, line);
+                        cline = "";
+                    }
 
                     this.lineBeforePreprocessing = line;
                     var line_len = line.Length;
@@ -530,13 +551,15 @@ namespace OpenBYOND.VM
                     {
                         if (line.EndsWith("\\")) continue;
                         var tokenChunks = line.Split('#');
-                        tokenChunks = tokenChunks[1].Split();
+                        tokenChunks = tokenChunks[1].Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
                         var directive = tokenChunks[0];
 
+                        //if (line.Contains("MAX_PILL_SPRITE"))
+                        //    throw new Exception("MAX PILL SPRITE");
                         if (directive == "define")
                         {
                             // //define SOMETHING Value
-                            var defineChunks = new List<string>(line.Split(new char[] { ' ', '\t' }, 3));
+                            var defineChunks = line.Split(new char[] { ' ', '\t' }, 3, StringSplitOptions.RemoveEmptyEntries).ToList();
                             if (defineChunks.Count == 2)
                                 defineChunks.Add("1");
                             else if (defineChunks.Count == 3)
@@ -565,7 +588,7 @@ namespace OpenBYOND.VM
                         {
                             int numtabs = 0;
                             m = REGEX_TABS.Match(line);
-                            if (m != null)
+                            if (m.Success)
                                 numtabs = m.Groups["tabs"].Length;
                             string atom = this.DetermineContext(filename, ln, line, numtabs);
                             // if atom is None: continue
@@ -587,9 +610,11 @@ namespace OpenBYOND.VM
                     line = this.PreprocessLine(line);
 
                     m = REGEX_TABS.Match(this.lineBeforePreprocessing);
-                    if (m != null)
+                    if (m.Success)
                     {
                         var numtabs = m.Groups["tabs"].Length;
+                        //if(lineBeforePreprocessing.StartsWith("\t"))
+                        //    log.DebugFormat("TABS: {0} ? {1} - {2}: {3}", numtabs, this.ignoreStartIndent, this.loadingProc, line);
                         if (this.ignoreStartIndent > -1 && this.ignoreStartIndent < numtabs)
                         {
                             if (loadingProc != null)
@@ -597,26 +622,26 @@ namespace OpenBYOND.VM
                                 // this.loadingProc.AddCode(numtabs - this.ignoreStartIndent, this.lineBeforePreprocessing.strip())
                                 this.AddCodeToProc(this.ignoreStartIndent, this.lineBeforePreprocessing);
                             }
-                            if (debugOn) log.DebugFormat("TABS: {0} ? {1} - {2}: {3}", numtabs, this.ignoreStartIndent, this.loadingProc, line);
+                            if (contextDebugOn) log.DebugFormat("TABS: {0} ? {1} - {2}: {3}", numtabs, this.ignoreStartIndent, this.loadingProc, line);
                             continue;
                         }
                         else
                         {
-                            if (this.debugOn && this.ignoreStartIndent > -1) log.DebugFormat("BREAK ({0} -> {1}): {2}", this.ignoreStartIndent, numtabs, line);
+                            if (this.contextDebugOn && this.ignoreStartIndent > -1) log.DebugFormat("BREAK ({0} -> {1}): {2}", this.ignoreStartIndent, numtabs, line);
                             this.ignoreStartIndent = -1;
                             this.loadingProc = null;
                         }
                     }
                     else
                     {
-                        if (this.debugOn && this.ignoreStartIndent > -1) log.Debug("BREAK " + line);
+                        if (this.contextDebugOn && this.ignoreStartIndent > -1) log.Debug("BREAK " + line);
                         this.ignoreStartIndent = -1;
                         this.loadingProc = null;
                     }
                     if (!line.Trim().StartsWith("var/"))
                     {
                         m = REGEX_ATOMDEF.Match(line);
-                        if (m != null)
+                        if (m.Success)
                         {
                             var numtabs = m.Groups["tabs"].Length;
                             var atom_str = m.Groups["atom"].Value;
@@ -626,43 +651,55 @@ namespace OpenBYOND.VM
                             //this.fileLayout += [("ATOMDEF", atom.path)];
                             continue;
                         }
-                        m = REGEX_ABSOLUTE_PROCDEF.Match(line);
-                        if (m != null)
+                        else
                         {
-                            var numtabs = m.Groups["tabs"].Length;
-                            var atom = string.Format("{0}/{1}({2})", m.Groups["atom"].Value, m.Groups["proc"].Value, m.Groups["args"].Value);
-                            var atom_path = new List<string>(this.SplitPath(atom));
-                            // print("PROCESSING ABS PROC AT INDENT > " + str(numtabs) + " " + atom+" -> "+repr(atom_path))
-                            var proc = this.ProcessAtom(filename, ln, line, atom, atom_path, numtabs, m.Groups["args"].Value.Split(','));
-                            if (proc == null)
+                            m = REGEX_ABSOLUTE_PROCDEF.Match(line);
+                            if (m.Success)
+                            {
+                                var numtabs = m.Groups["tabs"].Length;
+                                var atom = string.Format("{0}/{1}({2})", m.Groups["atom"].Value, m.Groups["proc"].Value, m.Groups["args"].Value);
+                                var atom_path = new List<string>(this.SplitPath(atom));
+                                //log.DebugFormat("PROCESSING ABS PROC AT INDENT > {0} {1} -> {2}", numtabs, atom, "/".join(atom_path));
+                                var proc = this.ProcessAtom(filename, ln, line, atom, atom_path, numtabs, m.Groups["args"].Value.Split(','));
+                                if (proc == null)
+                                    continue;
+                                this.ignoreStartIndent = numtabs;
+                                this.loadingProc = (Proc)proc;
+                                //this.fileLayout += [("PROCDEF", proc.path)]
                                 continue;
-                            this.ignoreStartIndent = numtabs;
-                            this.loadingProc = (Proc)proc;
-                            //this.fileLayout += [("PROCDEF", proc.path)]
-                            continue;
-                        }
-                        m = REGEX_RELATIVE_PROCDEF.Match(line);
-                        if (m != null)
-                        {
-                            var numtabs = m.Groups["tabs"].Length;
-                            var atom = string.Format("{}({})", m.Groups["proc"].Value, m.Groups["args"].Value);
-                            var atom_path = new List<string>(this.SplitPath(atom));
-                            // print("IGNORING RELATIVE PROC AT INDENT > " + str(numtabs) + " " + line)
-                            var proc = this.ProcessAtom(filename, ln, line, atom, atom_path, numtabs, m.Groups["args"].Value.Split(','));
-                            if (proc == null)
-                                continue;
-                            this.ignoreStartIndent = numtabs;
-                            this.loadingProc = (Proc)proc;
-                            //this.fileLayout += [("PROCDEF", proc.path)]
-                            continue;
+                            }
+                            else
+                            {
+
+                                m = REGEX_RELATIVE_PROCDEF.Match(line);
+                                if (m.Success)
+                                {
+                                    var numtabs = m.Groups["tabs"].Length;
+                                    var atom = string.Format("{0}({1})", m.Groups["proc"].Value, m.Groups["args"].Value);
+                                    var atom_path = new List<string>(this.SplitPath(atom));
+                                    // print("IGNORING RELATIVE PROC AT INDENT > " + str(numtabs) + " " + line)
+                                    var proc = this.ProcessAtom(filename, ln, line, atom, atom_path, numtabs, m.Groups["args"].Value.Split(','));
+                                    if (proc == null)
+                                        continue;
+                                    this.ignoreStartIndent = numtabs;
+                                    this.loadingProc = (Proc)proc;
+                                    //this.fileLayout += [("PROCDEF", proc.path)]
+                                    continue;
+                                }
+                                else
+                                {
+                                    if (line.Contains("(") && line.Trim().StartsWith("/") && !line.Contains("list("))
+                                    {
+                                        log.WarnFormat("{0}:{1}: Possible skipped proc: {2}", filename, ln, line);
+                                    }
+                                }
+                            }
                         }
                     }
                     var path = "/".join(this.cpath);
                     // if len(this.cpath) > 0 and "proc" in this.cpath:
                     //    continue
-                    // if "proc" in this.cpath:
-                    //    continue
-                    if (line.Contains("=") /*||  line.Trim().StartsWith("var/")*/)
+                    if (line.Contains("=") || line.Trim().StartsWith("var/"))
                     {
                         if (!Atoms.ContainsKey(path))
                             this.Atoms[path] = new Atom(path);
@@ -697,9 +734,22 @@ namespace OpenBYOND.VM
                 line = decl = this.lineBeforePreprocessing.Trim();
             else
                 decl = line.Trim();
-            if (line.Contains("[") && !line.Contains("list("))
+
+            if (line.Contains("="))
             {
-                string[] arrparts = line.Split(new char[] { '[' }, 2);
+                var chunks = line.Split(new char[] { '=' }, 2);
+                decl = chunks[0].Trim();
+                value = chunks[1].Trim();
+            }
+            else
+            {
+                decl = line.Trim();
+                value = null;
+            }
+
+            if (decl.Contains("[") && !decl.Contains("list("))
+            {
+                string[] arrparts = decl.Split(new char[] { '[' }, 2);
                 string line_split = arrparts[0];
                 string arr_decl = arrparts[1];
                 string str_size = "";
@@ -715,23 +765,13 @@ namespace OpenBYOND.VM
                     log.Warn(line);
                 }
 
-                if (str_size != "")
+                if (str_size != "" && !int.TryParse(str_size, out size))
                 {
-                    size = int.Parse(str_size);
+                    log.WarnFormat("Failed to parse {0} as int.", str_size);
+                    return;
                 }
                 // print(repr({"size":size,"line":line_split}))
-                line = line_split;
-            }
-            if (line.Contains("="))
-            {
-                var chunks = line.Split(new char[] { '=' }, 2);
-                decl = chunks[0].Trim();
-                value = chunks[1].Trim();
-            }
-            else
-            {
-                decl = line.Trim();
-                value = null;
+                decl = line_split;
             }
             // print(repr({"decl":decl,"value":value}))
 
@@ -775,6 +815,10 @@ namespace OpenBYOND.VM
                     prop = new Atom(typepath, filename, ln);//{declarative=declaration, special=special,size=size};
                 }
             }
+            else if (value == "null" || value == null)
+            {
+                prop = new BYONDNull(filename, ln) { type = new BYONDType(typepath), declarative = declaration, special = special, size = size };
+            }
             else if (value != null && value[0] == '"')
             {
                 prop = new BYONDString(value.Substring(1, value.Length - 1), filename, ln) { declarative = declaration, special = special, size = size };
@@ -783,11 +827,7 @@ namespace OpenBYOND.VM
             {
                 prop = new BYONDFileRef(value.Substring(1, value.Length - 1), filename, ln) { declarative = declaration, special = special, size = size };
             }
-            else if (value == "null" || value == null)
-            {
-                prop = new BYONDNull(filename, ln) { type = new BYONDType(typepath), declarative = declaration, special = special, size = size };
-            }
-            else if (value != null && float.TryParse(value,out parseval))
+            else if (value != null && float.TryParse(value, out parseval))
             {
                 prop = new BYONDNumber(parseval, filename, ln) { declarative = declaration, special = special, size = size };
             }
@@ -874,31 +914,114 @@ namespace OpenBYOND.VM
             return cNode;
         }
 
+        private struct PreprocChunk
+        {
+            public int start;
+            public int end;
+        }
 
+        private List<PreprocChunk> GetPPC(string line)
+        {
+            // Get chunks to process
+            List<PreprocChunk> chunks = new List<PreprocChunk>();
+            bool inString = false;
+            bool inMultiString = false;
+            int bracketLevel = 0; // "[dongs]"
+            char lastC = char.MinValue;
+            PreprocChunk ppc = new PreprocChunk();
+            ppc.start = 0;
+            for (int i = 0; i < line.Length; i++)
+            {
+                char c = line[i];
+                switch (c)
+                {
+                    case '"':
+                        if (inString && i < line.Length - 1)
+                        {
+                            if (inMultiString) continue;
+                            ppc = new PreprocChunk();
+                            ppc.start = i;
+                        }
+                        else
+                        {
+                            inMultiString = lastC == '{';
+                            ppc.end = i - 1;
+                            if (inMultiString)
+                                ppc.end--;
+                            if (ppc.end - ppc.end > 0)
+                                chunks.Add(ppc);
+                        }
+                        inString = !inString;
+                        break;
+                    case '}':
+                        if (inString)
+                        {
+                            if (inMultiString && i < line.Length - 1)
+                            {
+                                ppc = new PreprocChunk();
+                                ppc.start = i;
+                                inString = !inString;
+                            }
+                        }
+                        break;
+                }
+            }
+            if (!inString)
+            {
+                ppc.end = line.Length;
+                if (ppc.end - ppc.start > 0)
+                    chunks.Add(ppc);
+            }
+            return chunks;
+        }
         private string PreprocessLine(string line)
         {
+            string origline = line;
+
+            List<PreprocChunk> ppcs = GetPPC(line);
+
             foreach (KeyValuePair<string, BYONDValue> kvp in Defines)
             {
-                string key = kvp.Key;
-                BYONDValue value = kvp.Value;
-                if (line.Contains(key))
+                foreach (PreprocChunk _ppc in ppcs)
                 {
-                    if (!defineMatchers.ContainsKey(key))
-                        this.defineMatchers[key] = new Regex(@"\b" + key + @"\b");
-
-                    string newline = this.defineMatchers[key].Replace(value._value.ToString(), line);
-                    if (newline != line)
+                    int len = _ppc.end - _ppc.start;
+                    if (len > line.Length) throw new ArgumentOutOfRangeException();
+                    string currentChunk = line.Substring(_ppc.start, len);
+                    string key = kvp.Key;
+                    BYONDValue value = kvp.Value;
+                    bool updatePPCs = false;
+                    if (line.Contains(key))
                     {
-                        /*
-                        if(filename.EndsWith("pipes.dm")) {
-                            log.DebugFormat("OLD: {0}",line);
-                            log.DebugFormat("PPD: {0}",newline);
+                        if (!defineMatchers.ContainsKey(key))
+                        {
+                            this.defineMatchers[key] = new Regex(@"\b" + key + @"\b");
                         }
-                        */
-                        line = newline;
+                        string newChunk = this.defineMatchers[key].Replace(currentChunk, value._value.ToString());
+                        if (newChunk != currentChunk)
+                        {
+
+                            if (ppcDebugOn)
+                            {
+                                log.DebugFormat("RULE: {0}", key);
+                                log.DebugFormat("  OLD: {0}", currentChunk);
+                                log.DebugFormat("  PPD: {0}", newChunk);
+                            }
+                            currentChunk = newChunk;
+                            updatePPCs = true;
+                        }
+                    }
+                    if (updatePPCs)
+                    {
+                        line = line.ReplaceAt(_ppc.start, len, currentChunk);
+                        ppcs = GetPPC(line);
                     }
                 }
             }
+            /*
+            log.DebugFormat("PPC: {0}", ppcs.Count);
+            log.DebugFormat("OLD: {0}", origline);
+            log.DebugFormat("PPD: {0}", line);
+            */
             return line;
         }
     }

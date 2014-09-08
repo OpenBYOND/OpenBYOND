@@ -9,7 +9,7 @@ namespace OpenBYOND.World
 {
     public class Tile
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof(Utils));
+        private static readonly ILog log = LogManager.GetLogger(typeof(Tile));
 
         public List<Atom> Atoms = new List<Atom>();
 
