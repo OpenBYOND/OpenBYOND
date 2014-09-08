@@ -17,7 +17,7 @@ namespace OpenBYOND.Client
         private static readonly ILog log = LogManager.GetLogger(typeof (Utils));
         private int view_range = 7; // starting from the tile you're standing on, 7 tiles in each diretion is the default.
         public Mob mob;
-        public Camera eye;
+        public Camera2D eye;
         VirtualScreen virtualScreen;
         public int VIEWRANGE
         {
@@ -62,9 +62,11 @@ namespace OpenBYOND.Client
         {
 
             // TODO: Add your initialization logic here
-            eye = new Camera(base.GraphicsDevice.Viewport);
+            var adjustedrange = (view_range * 2 + 1) * 32;
+            eye = new Camera2D(base.GraphicsDevice.Viewport, adjustedrange);
             eye.Pos = mob.Position;
-            virtualScreen = new VirtualScreen(480, 480, GraphicsDevice);
+           
+            virtualScreen = new VirtualScreen(adjustedrange, adjustedrange, GraphicsDevice);
             Window.ClientSizeChanged += new EventHandler<EventArgs>(Window_ClientSizeChanged);
             Window.AllowUserResizing = true;
             base.Initialize();
@@ -112,8 +114,12 @@ namespace OpenBYOND.Client
             {
                 cdir = (cdir + 1)%Wiggle.Length;
             }
+            var adjustedrange = (view_range * 2 + 1) * 32;
+            virtualScreen.VirtualHeight = adjustedrange;
+            virtualScreen.VirtualWidth = adjustedrange;
             virtualScreen.Update();
             mob.Update(gameTime);
+            eye.Update();
             base.Update(gameTime);
         }
 
@@ -127,9 +133,10 @@ namespace OpenBYOND.Client
             GraphicsDevice.Clear(Color.White);
             Texture2D texture1px = new Texture2D(graphics.GraphicsDevice, 1, 1);
             texture1px.SetData(new Color[] { Color.Black });
-            var adjustedrange = (view_range*2 + 1)*32;
+            
+            
             //GraphicsDevice.Viewport = new Viewport(0,0,adjustedrange,adjustedrange);
-            spriteBatch.Begin(SpriteSortMode.Deferred, null, null, null, null, null, eye.viewMatrix);
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null, eye.InverseTransform);
             
             var yy = 1;
             var ii = 1;
@@ -165,7 +172,7 @@ namespace OpenBYOND.Client
                 drawCount++;
 
             }
-            /*for (float x = -300; x < 300; x++)
+            for (float x = -300; x < 300; x++)
             {
                 Microsoft.Xna.Framework.Rectangle rectangle = new Microsoft.Xna.Framework.Rectangle((int)(0 + x * 32), 0, 1, 800);
                 spriteBatch.Draw(texture1px, rectangle, Microsoft.Xna.Framework.Color.Black);
@@ -176,7 +183,7 @@ namespace OpenBYOND.Client
                 Microsoft.Xna.Framework.Rectangle rectangle = new Microsoft.Xna.Framework.Rectangle(0, (int)(0 + y * 32), 800, 1);
                 spriteBatch.Draw(texture1px, rectangle, Microsoft.Xna.Framework.Color.Black);
                 drawCount++;
-            }*/
+            }
             mob.Draw(spriteBatch,gameTime);
             
             spriteBatch.End();
