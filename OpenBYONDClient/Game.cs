@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Xml;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using log4net;
@@ -13,7 +14,9 @@ namespace OpenBYOND.Client
     {
         private static readonly ILog log = LogManager.GetLogger(typeof(OpenBYONDGame));
         private int view_range = 7; // starting from the tile you're standing on, 7 tiles in each diretion is the default.
-
+        public Mob mob;
+        public Camera2D eye;
+        VirtualScreen virtualScreen;
         public int VIEWRANGE
         {
             get { return view_range; }
@@ -41,6 +44,10 @@ namespace OpenBYOND.Client
             log.Info("BYONDGame Starting.");
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+            mob = new Mob(this, new Vector2(0F, 0F));
+            IsFixedTimeStep = true;
+            TargetElapsedTime = TimeSpan.FromSeconds(1.0f / 60.0f);
+            IsMouseVisible = true;
         }
 
         /// <summary>
@@ -51,12 +58,22 @@ namespace OpenBYOND.Client
         /// </summary>
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
 
+            // TODO: Add your initialization logic here
+            var adjustedrange = (view_range * 2 + 1) * 32;
+            eye = new Camera2D(base.GraphicsDevice.Viewport, adjustedrange);
+            eye.Pos = mob.Position;
+           
+            virtualScreen = new VirtualScreen(adjustedrange, adjustedrange, GraphicsDevice);
+            Window.ClientSizeChanged += new EventHandler<EventArgs>(Window_ClientSizeChanged);
+            Window.AllowUserResizing = true;
             base.Initialize();
 
         }
-
+        void Window_ClientSizeChanged(object sender, EventArgs e)
+        {
+            virtualScreen.PhysicalResolutionChanged();
+        }
         /// <summary>
         /// LoadContent will be called once per game and is the place to load
         /// all of your content.
@@ -68,7 +85,6 @@ namespace OpenBYOND.Client
 
             // Create a new SpriteBatch, which can be used to draw textures.
             DMIManager.Preload("TestFiles/human.dmi");
-
             // TODO: use this.Content to load your game content here
         }
 
@@ -92,15 +108,16 @@ namespace OpenBYOND.Client
 
             // Every 30 ticks...
             // TODO: Make it every 3 seconds (BYOND: 1 tick = 0.1 second)
-            if ((tick++ % 30) == 0)
+            if ((tick++%30) == 0)
             {
-                cdir = (cdir + 1) % Wiggle.Length;
+                cdir = (cdir + 1)%Wiggle.Length;
             }
-            else
-            {
-                SuppressDraw();
-            }
-
+            var adjustedrange = (view_range * 2 + 1) * 32;
+            virtualScreen.VirtualHeight = adjustedrange;
+            virtualScreen.VirtualWidth = adjustedrange;
+            virtualScreen.Update();
+            mob.Update(gameTime);
+            eye.Update();
             base.Update(gameTime);
         }
 
@@ -110,12 +127,14 @@ namespace OpenBYOND.Client
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
+            virtualScreen.BeginCapture();
             GraphicsDevice.Clear(Color.White);
             Texture2D texture1px = new Texture2D(graphics.GraphicsDevice, 1, 1);
             texture1px.SetData(new Color[] { Color.Black });
+            //GraphicsDevice.Viewport = new Viewport(0,0,adjustedrange,adjustedrange);
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null, eye.InverseTransform);
             var adjustedrange = (view_range * 2 + 1) * 32;
             GraphicsDevice.Viewport = new Viewport(0, 0, adjustedrange, adjustedrange);
-            spriteBatch.Begin();
 
             for (float x = -30; x < 30; x++)
             {
@@ -133,9 +152,11 @@ namespace OpenBYOND.Client
 
             var yy = 1;
             var ii = 1;
+            string[] states = new string[]{"floor", "white", "plating", "bar"};
+            Vector2 drawfield = new Vector2(32 * 32, 32*32);
             for (var i = 1; i <= 10000; i++)
             {
-
+                if (i % 256 == 0)
                 //DMIManager.GetSpriteBatch(this, "TestFiles/human.dmi", "fatbody_s", new Vector2(32f, 32f), dir: Wiggle[cdir]);
                 //DMIManager.GetSpriteBatch(this, "TestFiles/spacerat.dmi", "rat_brown", new Vector2(64f, 32f), dir: Wiggle[cdir]);
                 //DMIManager.DrawSpriteBatch(spriteBatch, this, "TestFiles/robots.dmi", "mommi", new Vector2(32f * (float)ii, 32f * (float)yy), dir: Wiggle[cdir]);
@@ -150,10 +171,46 @@ namespace OpenBYOND.Client
                 {
                     ii++;
                 }
+                if (ii > drawfield.X)
+                {
+                    if (yy > drawfield.Y)
+                    {
+                        break;
+                    }
+                    continue;
+                }
+                //DMIManager.GetSpriteBatch(this, "TestFiles/human.dmi", "fatbody_s", new Vector2(32f, 32f), dir: Wiggle[cdir]);
+                //DMIManager.GetSpriteBatch(this, "TestFiles/spacerat.dmi", "rat_brown", new Vector2(64f, 32f), dir: Wiggle[cdir]);
+                //DMIManager.DrawSpriteBatch(spriteBatch, this, "TestFiles/robots.dmi", "mommi", new Vector2(32f * (float)ii, 32f * (float)yy), dir: Wiggle[cdir]);
+                //DMIManager.DrawSpriteBatch(spriteBatch, this, "TestFiles/robots.dmi", "mommi", new Vector2(32f * (float)ii, 32f * (float)yy), dir: Wiggle[cdir]);
+                var rand = new Random();
+                int state = rand.Next(states.Length);
+                
+                DMIManager.DrawSpriteBatch(spriteBatch,this,"TestFiles/floors.dmi","floor",new Vector2(32f * (float)ii, 32f * (float)yy), 0);
+                drawCount++;
+
             }
+            for (float x = -300; x < 300; x++)
+            {
+                Microsoft.Xna.Framework.Rectangle rectangle = new Microsoft.Xna.Framework.Rectangle((int)(0 + x * 32), 0, 1, 800);
+                spriteBatch.Draw(texture1px, rectangle, Microsoft.Xna.Framework.Color.Black);
+                drawCount++;
+            }
+            for (float y = -300; y < 300; y++)
+            {
+                Microsoft.Xna.Framework.Rectangle rectangle = new Microsoft.Xna.Framework.Rectangle(0, (int)(0 + y * 32), 800, 1);
+                spriteBatch.Draw(texture1px, rectangle, Microsoft.Xna.Framework.Color.Black);
+                drawCount++;
+            }
+            mob.Draw(spriteBatch,gameTime);
+            
             spriteBatch.End();
-            //Console.WriteLine("SpriteBatch n = " + n + " had " + drawCount[n] + " calls this draw.");
-            drawCount = 0;
+            virtualScreen.EndCapture();
+
+            GraphicsDevice.Clear(Color.Black);
+            spriteBatch.Begin();
+            virtualScreen.Draw(spriteBatch);
+            spriteBatch.End();
             base.Draw(gameTime);
         }
     }
