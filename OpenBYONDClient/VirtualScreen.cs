@@ -9,8 +9,8 @@ namespace OpenBYOND.Client
 {
     internal class VirtualScreen
     {
-        public readonly int VirtualWidth;
-        public readonly int VirtualHeight;
+        public int VirtualWidth;
+        public int VirtualHeight;
         public readonly float VirtualAspectRatio;
 
         private GraphicsDevice graphicsDevice;
