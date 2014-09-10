@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using Irony.Parsing;
 using Irony.Interpreter;
+using Irony.Ast;
+using Irony.Interpreter.Ast;
 
 /**************************************************************************
  * WARNING: HERE BE DRAGONS.
@@ -31,12 +33,18 @@ namespace OpenBYOND.VM
     [Language("Dream", "0.1", "WIP re-implementation of the BYOND game development language.")]
     public class DreamGrammar : InterpretedLanguageGrammar
     {
+        // ROADMAP:
+        // 1. Basic object-tree shit (atoms)
+        // 2. Proc support
+        // 3. Preprocessor
         public DreamGrammar()
             : base(caseSensitive: true)
         {
             // Thankfully, we get built-in pythonic numbers, which is exactly what we need.
             var number = TerminalFactory.CreatePythonNumber("number");
             var identifier = TerminalFactory.CreatePythonIdentifier("identifier");
+            var comma = ToTerm(",");
+            var slash = ToTerm("/");
 
             /////////////////
             // COMMENTS
@@ -53,7 +61,51 @@ namespace OpenBYOND.VM
             base.NonGrammarTerminals.Add(lineComment);
             base.NonGrammarTerminals.Add(blockComment);
 
+            /////////////////
+            // BNF rules
 
+            // Blocks
+            var procblock = new NonTerminal("procblock", "proc declaration");
+            var procchildren = new NonTerminal("procchildren", "proc children");
+
+            var atomblock = new NonTerminal("atomblock", "atom declaration");
+            var atomchildren = new NonTerminal("atomchildren", "atom declaration");
+
+            // Path stuff
+            var path = new NonTerminal("path");
+            var abspath = new NonTerminal("abspath", "absolute path");
+            var relpath = new NonTerminal("relpath", "relative path");
+
+            // Parameters
+            var paramlist = new NonTerminal("paramlist", "parameter list", typeof(ParamListNode));
+
+            var script = new NonTerminal("script", "script root", typeof(StatementListNode));
+            var declblocks = new NonTerminal("declblocks", "declarative blocks");
+
+            // <atomblock> ::= <path> INDENT <atomchildren> DEDENT
+            atomblock.Rule = path + Indent + atomchildren + Dedent;
+
+            // <procblock> ::= <path> '(' <paramlist> ')' INDENT <procchildren> DEDENT
+            procblock.Rule = path + "(" + paramlist + ")" + Indent + procchildren + Dedent;
+
+            // <script> ::= <declblocks>*
+            script.Rule = MakeStarRule(script, declblocks);
+
+            // <declblocks> ::= <procblock>
+            //                | <atomblock>
+            declblocks.Rule = atomblock
+                      | procblock;
+
+            // <paramlist> ::= <parameter>*
+            // TODO: Make parameter rule, using IDENTIFIER as placeholder
+            paramlist.Rule = MakeStarRule(paramlist, comma, identifier);
+        }
+
+        public override void CreateTokenFilters(LanguageData language, TokenFilterList filters)
+        {
+            var outlineFilter = new CodeOutlineFilter(language.GrammarData,
+              OutlineOptions.ProduceIndents | OutlineOptions.CheckBraces, ToTerm(@"\")); // "\" is continuation symbol
+            filters.Add(outlineFilter);
         }
     }
 }
