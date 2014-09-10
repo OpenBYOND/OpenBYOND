@@ -46,8 +46,8 @@ namespace OpenBYOND.VM
             var comma = ToTerm(",");
             var slash = ToTerm("/");
 
-            /////////////////
-            // COMMENTS
+            #region Comment stuff
+
             // Dream uses both line comments and block comments.
             var lineComment = new CommentTerminal("lineComment", "//", "\n", "\r");
 
@@ -61,8 +61,9 @@ namespace OpenBYOND.VM
             base.NonGrammarTerminals.Add(lineComment);
             base.NonGrammarTerminals.Add(blockComment);
 
-            /////////////////
-            // BNF rules
+            #endregion
+
+            #region Non-Terminals
 
             // Blocks
             var procblock = new NonTerminal("procblock", "proc declaration");
@@ -82,6 +83,10 @@ namespace OpenBYOND.VM
             var script = new NonTerminal("script", "script root", typeof(StatementListNode));
             var declblocks = new NonTerminal("declblocks", "declarative blocks");
 
+            #endregion
+
+            #region BNF Rules
+
             // <atomblock> ::= <path> INDENT <atomchildren> DEDENT
             atomblock.Rule = path + Indent + atomchildren + Dedent;
 
@@ -99,6 +104,8 @@ namespace OpenBYOND.VM
             // <paramlist> ::= <parameter>*
             // TODO: Make parameter rule, using IDENTIFIER as placeholder
             paramlist.Rule = MakeStarRule(paramlist, comma, identifier);
+
+            #endregion
         }
 
         public override void CreateTokenFilters(LanguageData language, TokenFilterList filters)
