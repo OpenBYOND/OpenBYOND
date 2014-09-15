@@ -41,11 +41,18 @@ namespace OpenBYOND.VM
             : base(caseSensitive: true)
         {
             // Thankfully, we get built-in pythonic numbers, which is exactly what we need.
-            var number = TerminalFactory.CreatePythonNumber("number");
-            var identifier = TerminalFactory.CreatePythonIdentifier("identifier");
-            var comma = ToTerm(",");
-            var slash = ToTerm("/");
-            var pipe = ToTerm("|");
+            var NUMBER = TerminalFactory.CreatePythonNumber("number");
+            var IDENTIFIER = TerminalFactory.CreatePythonIdentifier("identifier");
+            var STRING = TerminalFactory.CreatePythonString("string"); // TODO:  May need to be custom.
+
+            // Constant terminals
+            var PROC = ToTerm("proc");
+            var VAR = ToTerm("var");
+            var RETURN = ToTerm("return");
+
+            var COMMA = ToTerm(",");
+            var SLASH = ToTerm("/");
+            var PIPE = ToTerm("|");
 
             #region Comment stuff
 
@@ -61,12 +68,22 @@ namespace OpenBYOND.VM
             // However, with Dream, we may need to make them grammar terminals so we can handle nesting properly. - N3X
             base.NonGrammarTerminals.Add(lineComment);
             base.NonGrammarTerminals.Add(blockComment);
+
+            // Needed for EOL escaping.
             base.NonGrammarTerminals.Add(ToTerm(@"\"));
             #endregion
 
             #region Non-Terminals
             // Blocks
-            var procblock = new NonTerminal("procblock", "proc declaration");
+            ////////////////////////////
+
+            // procs
+            var procblock = new NonTerminal("procblock", "proc block");
+            var procslash = new NonTerminal("procslash");
+            var procdef = new NonTerminal("procdef", "proc definition");
+            var procdefs = new NonTerminal("procdefs");
+            var procdef_no_path = new NonTerminal("procdef_no_path", "proc definition (sans path)");
+            var procdecl = new NonTerminal("procdecl");
             var procchildren = new NonTerminal("procchildren", "proc children");
 
             var atomblock = new NonTerminal("atomblock", "atom declaration");
@@ -77,18 +94,34 @@ namespace OpenBYOND.VM
             var path = new NonTerminal("path");
             var abspath = new NonTerminal("abspath", "absolute path");
             var relpath = new NonTerminal("relpath", "relative path");
+            var pathslash = new NonTerminal("pathslash");
 
             // Variable declaration
-            var vardecl = new NonTerminal("vardecl", "variable declaration");
-            var vardeclnull = new NonTerminal("vardeclnull", "null variable declaration");
+            var vardefs = new NonTerminal("vardefs");
+            var vardef = new NonTerminal("vardef");
+            var inline_vardef_no_default = new NonTerminal("inline_vardef_no_default");
+            var inline_vardef = new NonTerminal("inline_vardef");
+            var varblock = new NonTerminal("varblock");
 
             // Parameters
             var param = new NonTerminal("param", "parameter");
+            var parameters = new NonTerminal("parameters");
             var paramlist = new NonTerminal("paramlist", "parameter list", typeof(ParamListNode));
 
             // Primitives (Identifiers won't work because of the "anything in <list>" rule.)
             var primitive = new NonTerminal("primitive");
             var primitivelist = new NonTerminal("primitivelist","primitive list");
+
+            // Expressions
+            var const_expression = new NonTerminal("const_expression");
+            var expression = new NonTerminal("expression");
+            var expressions = new NonTerminal("expressions");
+            var assignable_expression = new NonTerminal("assignable_expression");
+            var assignment = new NonTerminal("assignment");
+            var operations = new NonTerminal("operations");
+
+            // Statements
+            var return_stmt = new NonTerminal("return_stmt");
 
             var script = new NonTerminal("script", "script root", typeof(StatementListNode));
             var declblocks = new NonTerminal("declblocks", "declarative blocks");
@@ -102,13 +135,16 @@ namespace OpenBYOND.VM
 
             // <relpath> ::= <identifier>
             //             | <relpath> '/' <identifier>
-            relpath.Rule = identifier 
-                | relpath + slash + identifier;
+            relpath.Rule = IDENTIFIER 
+                | relpath + SLASH + IDENTIFIER;
 
             // <abspath> ::= '/' <relpath>
             //             | <abspath> '/' <identifier>
-            abspath.Rule = slash + relpath
-                | abspath + slash + identifier;
+            abspath.Rule = SLASH + relpath
+                | abspath + SLASH + IDENTIFIER;
+
+            // <pathslash> ::= <path> '/'
+            pathslash.Rule = path + SLASH;
             #endregion
 
             #region Blocks (atoms, procs, if, etc)
@@ -122,40 +158,144 @@ namespace OpenBYOND.VM
             //               | <atomblock>
             //               | <procblock>
             //               | <varblock>
-            atomchild.Rule = vardecl | atomblock | procblock /*| varblock*/;
+            atomchild.Rule = vardef 
+                           | atomblock 
+                           | procblock 
+                           | varblock
+                           ;
 
-            // <procblock> ::= <path> '(' <paramlist> ')' INDENT <procchildren> DEDENT
-            procblock.Rule = path + "(" + paramlist + ")" + Indent + procchildren + Dedent;
+            // <procblock> ::= PROC INDENT <procdefs> DEDENT
+            procblock.Rule = PROC + Indent + procdefs + Dedent;
+
+            // <procdefs> ::= <procdef_no_path>+
+            procdefs.Rule = MakePlusRule(procdefs,procdef_no_path);
 
             // <declblocks> ::= <procblock>
             //                | <atomblock>
             declblocks.Rule = atomblock | procblock;
             #endregion
 
-            // I don't know what I'm doing here.
+            #region Variable stuff
+            // <vardef> ::= <path> <varblock>
+            //            | <varblock>
+            //            | <inline_vardef>
+            vardef.Rule = path + varblock
+	                    | varblock
+	                    | inline_vardef
+	                    ;
+
+            // <vardefs> ::= <vardef>+
+            vardefs.Rule = MakePlusRule(vardefs,vardef);
+            
+	        // var/honk is basically 
+	        // VAR path(/) identifier(honk)
+            // <inline_vardef_no_default> ::= VAR <abspath> '/' IDENTIFIER
+            //                              | VAR '/' IDENTIFIER
+            inline_vardef_no_default.Rule = VAR + abspath + SLASH + IDENTIFIER
+                                          | VAR + SLASH + IDENTIFIER
+                                          ;
+            // <inline_vardef> ::= inline_vardef_no_default
+            //                   | inline_vardef_no_default '='
+            inline_vardef.Rule = inline_vardef_no_default                     
+	                           | inline_vardef_no_default + "=" + const_expression
+                               ;
+	
+            // <varblock> ::= VAR INDENT <vardefs> DEDENT
+            varblock.Rule = VAR + Indent + vardefs + Dedent;
+            #endregion
+
+            #region Proc stuff
+            // <parameters> ::= '(' <paramlist> ')'
+            parameters.Rule = ToTerm("(") + paramlist + ")";
+
+            // <paramlist> ::= <param>*
+            paramlist.Rule = MakeStarRule(paramlist, COMMA, param);
+
+            // This is probably one of the worst parts about Dream. This shit is an absolute mess. - N3X
+            // <param> ::= <inline_vardef>                          // var/type/blah [=blah]
+            //           | <identifier>                       // blah
+            //           | <inline_vardef_no_default> 'as' <primitivelist> // var/blah as obj|mob
+            //           | <identifier> 'as' <primitivelist>  // blah as obj|mob
+            param.Rule = inline_vardef
+                 | IDENTIFIER
+                 | inline_vardef_no_default + "as" + primitivelist
+                 | IDENTIFIER + "as" + primitivelist
+                 ;
+
+            // <procdef> ::= <path> <parameters> INDENT <expressions> DEDENT
+            procdef.Rule = path + parameters + Indent + expressions + Dedent;
+
+            // <procslash> ::= PROC SLASH
+            procslash.Rule = PROC + SLASH;
+
+            // <procdecl> ::= <pathslash> <procslash> <procdef_no_path>
+            //              | <pathslash> <procblock>
+            //              | <procblock> 
+            procdecl.Rule = pathslash + procslash + procdef_no_path
+                          | pathslash + procblock
+                          | procblock
+                          ;
+            #endregion
+
+            #region Expressions
+            // Note:  this gets particularly hairy.
+
+            // <const_expression> ::= NUMBER
+            //                      | STRING
+            //                      | '(' <const_expression> ')'
+            //                      | <operations>
+            const_expression.Rule = NUMBER
+	                              | STRING
+	                              | "(" + const_expression +  ")"
+                                  | operations
+                                  ;
+
+            // <operations> ::= <const_expression> "*" <const_expression>
+	        //                | <const_expression> "/" <const_expression>
+	        //                | <const_expression> "%" <const_expression>
+	        //                | <const_expression> "+" <const_expression>
+	        //                | <const_expression> "-" <const_expression>
+            operations.Rule = const_expression + "*" + const_expression
+	                        | const_expression + "/" + const_expression
+	                        | const_expression + "%" + const_expression
+	                        | const_expression + "+" + const_expression
+	                        | const_expression + "-" + const_expression
+	                        ;
+
+            // <expression> ::= <assignment>
+            //                | <inline_vardef>
+            //                | <return_stmt>
+            expression.Rule = assignment
+	                        | inline_vardef
+	                        | return_stmt
+	                        ;
+	
+            // <expressions> ::= <expression>*
+            expressions.Rule = MakeStarRule(expressions,expression);
+	
+            // <assignable_expression> ::= <const_expression>
+            //                           | IDENTIFIER
+            //                           | STRING
+            assignable_expression.Rule = const_expression
+	                                   | IDENTIFIER 
+	                                   | STRING
+	                                   ;
+	
+            // <assignment> ::= IDENTIFIER '=' <assignable_expression>
+            assignment.Rule=IDENTIFIER + "=" + assignable_expression;
+
+            // <return_stmt> ::= RETURN const_expression
+            return_stmt.Rule = RETURN + const_expression;
+            #endregion
+
+            // Okay, this is apparently the right way to do it. - N3X
             primitive.Rule = ToTerm("obj")|"mob"|"turf"/*|"anything" + "in" + list*/;
 
             // <primitivelist> ::= <primitive>+ (| seperator)
-            primitivelist.Rule = MakePlusRule(primitivelist,pipe,primitive);
-
-            // <vardeclnull> ::= "var" <abspath>
-            vardeclnull.Rule = "var" + abspath;
-
-            // <vardecl> ::= <vardeclnull> | <vardeclnull> "=" <expr>
-            vardecl.Rule = vardeclnull /*| vardeclnull + "=" + expr*/;
-
-            // This is probably one of the worst parts about Dream. This shit is an absolute mess. - N3X
-            // <param> ::= <vardecl>                          // var/type/blah [=blah]
-            //           | <identifier>                       // blah
-            //           | <vardeclnull> 'as' <primitivelist> // var/blah as obj|mob
-            //           | <identifier> 'as' <primitivelist>  // blah as obj|mob
-            param.Rule = vardecl 
-                | identifier 
-                | vardeclnull + "as" + primitivelist 
-                | identifier + "as" + primitivelist;
+            primitivelist.Rule = MakePlusRule(primitivelist,PIPE,primitive);
 
             // <paramlist> ::= <parameter>*
-            paramlist.Rule = MakeStarRule(paramlist, comma, param);
+            paramlist.Rule = MakeStarRule(paramlist, COMMA, param);
 
             // <script> ::= <declblocks>*
             script.Rule = MakeStarRule(script, declblocks);
