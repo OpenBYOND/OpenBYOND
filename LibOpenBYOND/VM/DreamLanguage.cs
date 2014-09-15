@@ -45,6 +45,7 @@ namespace OpenBYOND.VM
             var identifier = TerminalFactory.CreatePythonIdentifier("identifier");
             var comma = ToTerm(",");
             var slash = ToTerm("/");
+            var pipe = ToTerm("|");
 
             #region Comment stuff
 
@@ -77,8 +78,16 @@ namespace OpenBYOND.VM
             var abspath = new NonTerminal("abspath", "absolute path");
             var relpath = new NonTerminal("relpath", "relative path");
 
+            // Variable declaration
+            var vardecl = new NonTerminal("vardecl", "variable declaration");
+            var vardeclnull = new NonTerminal("vardeclnull", "null variable declaration");
+
+
             // Parameters
+            var param = new NonTerminal("param", "parameter");
             var paramlist = new NonTerminal("paramlist", "parameter list", typeof(ParamListNode));
+            var primitive = new NonTerminal("primitive");
+            var primitivelist = new NonTerminal("primitivelist","primitive list");
 
             var script = new NonTerminal("script", "script root", typeof(StatementListNode));
             var declblocks = new NonTerminal("declblocks", "declarative blocks");
@@ -95,16 +104,37 @@ namespace OpenBYOND.VM
 
             // <script> ::= <declblocks>*
             script.Rule = MakeStarRule(script, declblocks);
+            this.Root = script;
 
             // <declblocks> ::= <procblock>
             //                | <atomblock>
             declblocks.Rule = atomblock
                       | procblock;
 
-            // <paramlist> ::= <parameter>*
-            // TODO: Make parameter rule, using IDENTIFIER as placeholder
-            paramlist.Rule = MakeStarRule(paramlist, comma, identifier);
+            // I don't know what I'm doing here.
+            primitive.Rule = ToTerm("obj")|ToTerm("mob")|ToTerm("turf")|ToTerm("anything");
 
+            // <primitivelist> ::= <primitive>+ (| seperator)
+            primitivelist.Rule = MakePlusRule(primitivelist,pipe,primitive);
+
+            // <vardeclnull> ::= "var" <abspath>
+            vardeclnull.Rule = "var" + abspath;
+
+            // <vardecl> ::= <vardeclnull> | <vardeclnull> "=" <expr>
+            vardecl.Rule = vardeclnull /*| vardeclnull + "=" + expr*/;
+
+            // This is probably one of the worst parts about Dream. This shit is an absolute mess. - N3X
+            // <param> ::= <vardecl>                          // var/type/blah [=blah]
+            //           | <identifier>                       // blah
+            //           | <vardeclnull> 'as' <primitivelist> // var/blah as obj|mob
+            //           | <identifier> 'as' <primitivelist>  // blah as obj|mob
+            param.Rule = vardecl 
+                | identifier 
+                | vardeclnull + "as" + primitivelist 
+                | identifier + "as" + primitivelist;
+
+            // <paramlist> ::= <parameter>*
+            paramlist.Rule = MakeStarRule(paramlist, comma, param);
             #endregion
         }
 
