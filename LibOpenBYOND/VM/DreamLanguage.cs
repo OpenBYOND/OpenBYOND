@@ -61,7 +61,7 @@ namespace OpenBYOND.VM
             // However, with Dream, we may need to make them grammar terminals so we can handle nesting properly. - N3X
             base.NonGrammarTerminals.Add(lineComment);
             base.NonGrammarTerminals.Add(blockComment);
-
+            base.NonGrammarTerminals.Add(ToTerm(@"\"));
             #endregion
 
             #region Non-Terminals
