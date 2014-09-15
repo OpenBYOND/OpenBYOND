@@ -172,7 +172,12 @@ namespace OpenBYOND.VM
 
             // <declblocks> ::= <procblock>
             //                | <atomblock>
-            declblocks.Rule = atomblock | procblock;
+            declblocks.Rule = atomblock
+                            | procblock
+                            | procdecl
+                            | procdef
+                            | varblock
+                            ;
             #endregion
 
             #region Variable stuff
@@ -224,6 +229,9 @@ namespace OpenBYOND.VM
 
             // <procdef> ::= <path> <parameters> INDENT <expressions> DEDENT
             procdef.Rule = path + parameters + Indent + expressions + Dedent;
+
+            // <procdef_no_path> ::= IDENTIFIER <parameters> INDENT <expressions> DEDENT
+            procdef_no_path.Rule = IDENTIFIER + parameters + Indent + expressions + Dedent;
 
             // <procslash> ::= PROC SLASH
             procslash.Rule = PROC + SLASH;
@@ -298,9 +306,13 @@ namespace OpenBYOND.VM
             paramlist.Rule = MakeStarRule(paramlist, COMMA, param);
 
             // <script> ::= <declblocks>*
-            script.Rule = MakeStarRule(script, declblocks);
+            script.Rule = declblocks;
             this.Root = script;
             #endregion
+
+            this.MarkReservedWords("break", "continue", "else", "for",
+                "if", "return", "while", "proc");
+            this.LanguageFlags = LanguageFlags.NewLineBeforeEOF | LanguageFlags.CreateAst | LanguageFlags.SupportsBigInt;
         }
 
         public override void CreateTokenFilters(LanguageData language, TokenFilterList filters)
