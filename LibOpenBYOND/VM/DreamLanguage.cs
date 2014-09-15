@@ -71,6 +71,7 @@ namespace OpenBYOND.VM
 
             var atomblock = new NonTerminal("atomblock", "atom declaration");
             var atomchildren = new NonTerminal("atomchildren", "atom declaration");
+            var atomchild = new NonTerminal("atomchild", "atom child");
 
             // Path stuff
             var path = new NonTerminal("path");
@@ -113,6 +114,15 @@ namespace OpenBYOND.VM
             #region Blocks (atoms, procs, if, etc)
             // <atomblock> ::= <path> INDENT <atomchildren> DEDENT
             atomblock.Rule = path + Indent + atomchildren + Dedent;
+
+            // <atomchildren> ::= <atomchild>*
+            atomchildren.Rule = MakeStarRule(atomchildren, atomchild);
+
+            // <atomchild> ::= <vardecl>
+            //               | <atomblock>
+            //               | <procblock>
+            //               | <varblock>
+            atomchild.Rule = vardecl | atomblock | procblock /*| varblock*/;
 
             // <procblock> ::= <path> '(' <paramlist> ')' INDENT <procchildren> DEDENT
             procblock.Rule = path + "(" + paramlist + ")" + Indent + procchildren + Dedent;
