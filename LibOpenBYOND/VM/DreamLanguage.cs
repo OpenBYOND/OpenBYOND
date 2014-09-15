@@ -65,7 +65,6 @@ namespace OpenBYOND.VM
             #endregion
 
             #region Non-Terminals
-
             // Blocks
             var procblock = new NonTerminal("procblock", "proc declaration");
             var procchildren = new NonTerminal("procchildren", "proc children");
@@ -82,34 +81,46 @@ namespace OpenBYOND.VM
             var vardecl = new NonTerminal("vardecl", "variable declaration");
             var vardeclnull = new NonTerminal("vardeclnull", "null variable declaration");
 
-
             // Parameters
             var param = new NonTerminal("param", "parameter");
             var paramlist = new NonTerminal("paramlist", "parameter list", typeof(ParamListNode));
+
+            // Primitives (Identifiers won't work because of the "anything in <list>" rule.)
             var primitive = new NonTerminal("primitive");
             var primitivelist = new NonTerminal("primitivelist","primitive list");
 
             var script = new NonTerminal("script", "script root", typeof(StatementListNode));
             var declblocks = new NonTerminal("declblocks", "declarative blocks");
-
             #endregion
 
             #region BNF Rules
 
+            #region Type Paths
+            // <path> ::= <abspath> | <relpath>
+            path.Rule = abspath | relpath;
+
+            // <relpath> ::= <identifier>
+            //             | <relpath> '/' <identifier>
+            relpath.Rule = identifier 
+                | relpath + slash + identifier;
+
+            // <abspath> ::= '/' <relpath>
+            //             | <abspath> '/' <identifier>
+            abspath.Rule = slash + relpath
+                | abspath + slash + identifier;
+            #endregion
+
+            #region Blocks (atoms, procs, if, etc)
             // <atomblock> ::= <path> INDENT <atomchildren> DEDENT
             atomblock.Rule = path + Indent + atomchildren + Dedent;
 
             // <procblock> ::= <path> '(' <paramlist> ')' INDENT <procchildren> DEDENT
             procblock.Rule = path + "(" + paramlist + ")" + Indent + procchildren + Dedent;
 
-            // <script> ::= <declblocks>*
-            script.Rule = MakeStarRule(script, declblocks);
-            this.Root = script;
-
             // <declblocks> ::= <procblock>
             //                | <atomblock>
-            declblocks.Rule = atomblock
-                      | procblock;
+            declblocks.Rule = atomblock | procblock;
+            #endregion
 
             // I don't know what I'm doing here.
             primitive.Rule = ToTerm("obj")|"mob"|"turf"/*|"anything" + "in" + list*/;
@@ -135,6 +146,10 @@ namespace OpenBYOND.VM
 
             // <paramlist> ::= <parameter>*
             paramlist.Rule = MakeStarRule(paramlist, comma, param);
+
+            // <script> ::= <declblocks>*
+            script.Rule = MakeStarRule(script, declblocks);
+            this.Root = script;
             #endregion
         }
 
