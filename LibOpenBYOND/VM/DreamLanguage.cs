@@ -112,7 +112,7 @@ namespace OpenBYOND.VM
                       | procblock;
 
             // I don't know what I'm doing here.
-            primitive.Rule = ToTerm("obj")|ToTerm("mob")|ToTerm("turf")|ToTerm("anything");
+            primitive.Rule = ToTerm("obj")|"mob"|"turf"|"anything";
 
             // <primitivelist> ::= <primitive>+ (| seperator)
             primitivelist.Rule = MakePlusRule(primitivelist,pipe,primitive);
