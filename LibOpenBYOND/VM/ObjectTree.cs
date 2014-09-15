@@ -926,7 +926,7 @@ namespace OpenBYOND.VM
             List<PreprocChunk> chunks = new List<PreprocChunk>();
             bool inString = false;
             bool inMultiString = false;
-            int bracketLevel = 0; // "[dongs]"
+            //int bracketLevel = 0; // "[dongs]"
             char lastC = char.MinValue;
             PreprocChunk ppc = new PreprocChunk();
             ppc.start = 0;
