@@ -330,9 +330,7 @@ namespace OpenBYOND.VM
 
         public override void CreateTokenFilters(LanguageData language, TokenFilterList filters)
         {
-            var outlineFilter = new CodeOutlineFilter(language.GrammarData,
-              OutlineOptions.ProduceIndents | OutlineOptions.CheckBraces, ToTerm(@"\")); // "\" is continuation symbol
-            filters.Add(outlineFilter);
+            filters.Add(new IndentFilter(language.GrammarData, ToTerm(@"\"), ToTerm("{"),ToTerm("}")));
         }
     }
 }
