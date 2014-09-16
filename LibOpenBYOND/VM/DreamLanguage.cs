@@ -131,13 +131,9 @@ namespace OpenBYOND.VM
             var script = new NonTerminal("script", "script root", typeof(StatementListNode));
             var declblocks = new NonTerminal("declblocks", "declarative blocks");
 
-            // Because Irony is dumb sometimes.
-            var INDENT = new NonTerminal("INDENT") {
-                Rule = Eos + Indent
-            };
-            var DEDENT = new NonTerminal("INDENT") {
-                Rule = Eos + Dedent
-            };
+            // Easier on the eyes.
+            var INDENT = Indent;
+            var DEDENT = Dedent;
             #endregion
 
             #region BNF Rules
@@ -309,7 +305,8 @@ namespace OpenBYOND.VM
             #endregion
 
             // Okay, this is apparently the right way to do it. - N3X
-            primitive.Rule = ToTerm("obj")|"mob"|"turf"/*|"anything" + "in" + list*/;
+            primitive.Rule = ToTerm("obj")|"mob"|"turf"/*|"anything" + "in" + list*/
+            ;
 
             // <primitivelist> ::= <primitive>+ (| seperator)
             primitivelist.Rule = MakePlusRule(primitivelist,PIPE,primitive);
@@ -325,7 +322,7 @@ namespace OpenBYOND.VM
 
             this.MarkReservedWords("break", "continue", "else", "for", "if", "return", "while", "proc");
 
-            this.LanguageFlags = LanguageFlags.NewLineBeforeEOF | LanguageFlags.CreateAst | LanguageFlags.SupportsBigInt;
+            this.LanguageFlags = LanguageFlags.NewLineBeforeEOF /*| LanguageFlags.CreateAst*/ | LanguageFlags.SupportsBigInt;
         }
 
         public override void CreateTokenFilters(LanguageData language, TokenFilterList filters)

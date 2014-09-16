@@ -19,10 +19,10 @@ namespace OpenBYOND.VM
         public int[] indent_stack = new int[200];
         public TokenStack OutputTokens = new TokenStack();
         private ParsingContext pcontext;
-        private bool readingIndents = false;
+        private bool readingIndents = true;
         private Grammar grammar;
         private GrammarData grammarData;
-        private int current_indent_level;
+        private int current_indent_level = 0;
         private int current_line_indent;
         private int indent_level;
         private int linenum;
@@ -46,71 +46,56 @@ namespace OpenBYOND.VM
             this.pcontext = context;
             foreach (Token t in tokens)
             {
+                Console.WriteLine(" -> {0} ({1})", t, bracket_indent_level);
                 currentLoc = t.Location;
-                if (readingIndents)
+                if (t.Terminal == grammar.Eof)
+                {
+                    Console.WriteLine("CLI: {0}, CIL: {1}", current_line_indent, current_indent_level);
+                    current_line_indent = 0;
+                    while(current_indent_level > 0)
+                    {
+                        current_indent_level--;
+                        Console.WriteLine(" <- DEDENT");
+                        yield return new Token(grammar.Dedent,currentLoc,string.Empty,null);
+                    }
+                    yield return t;
+                    break;
+                }
+                if (bracket_indent_level == 0)
                 {
                     while (ProcessToken(t)) { ;}
                     while (OutputTokens.Count > 0)
                         yield return OutputTokens.Pop();
+                    continue;
                 }
-                else
-                {
-                    if (t.Terminal == this.grammar.Eos)
-                    {
-                        /* Only handle block indents if we're not in a bracket indent. */
-                        if (bracket_indent_level == 0)
-                        {
-                            current_line_indent = 0;
-                            readingIndents = true;
-                        }
-                        linenum++;
-                    }
-                    /* Dream is dumb and permits opening/closing brackets in addition to indents */
-                    if (t.Terminal == opening_bracket) { bracket_indent_level++; yield return new Token(grammar.Indent, currentLoc, string.Empty, null); continue; }
-                    if (t.Terminal == closing_bracket) { Debug.Assert(bracket_indent_level > 0); bracket_indent_level--; yield return new Token(grammar.Dedent, currentLoc, string.Empty, null); continue; }
-                    yield return t;
-                }
+                if (t.Terminal == opening_bracket) { bracket_indent_level++; yield return new Token(grammar.Indent, currentLoc, string.Empty, null); continue; }
+                else if (t.Terminal == closing_bracket) { Debug.Assert(bracket_indent_level > 0); bracket_indent_level--; yield return new Token(grammar.Dedent, currentLoc, string.Empty, null); continue; }
+                yield return t;
             }
         }
         private void PushToken(Terminal term)
         {
-            OutputTokens.Push(new Token(term, currentLoc, string.Empty, null));
+            PushToken(new Token(term, currentLoc, string.Empty, null));
         }
         private void PushToken(Token t)
         {
+            Console.WriteLine(" <- {0}", t);
             OutputTokens.Push(t);
         }
 
         private bool ProcessToken(Token t)
         {
             if (t.Terminal == this.grammar.LineStartTerminal) return HandleLineStart(t);
-            if (t.Terminal == this.grammar.Eof) return HandleEOF(t);
             if (t.Terminal == this.grammar.Eos) { current_line_indent = 0; linenum++; /*ignoring blank line */ }
             PushToken(t);
             readingIndents = false;
             return false;
         }
 
-        private bool HandleEOF(Token t)
-        {
-            log.DebugFormat("CLI: {0}, CIL: {1}]", current_line_indent, current_indent_level);
-            current_line_indent = 0;
-            if (current_indent_level > 0)
-            {
-                current_indent_level--;
-                PushToken(grammar.Dedent);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
         private bool HandleLineStart(Token t)
         {
             current_line_indent = t.Location.Column;
-            log.DebugFormat("CLI: {0}, CIL: {1}", current_line_indent, current_indent_level);
+            Console.WriteLine("CLI: {0}, CIL: {1}", current_line_indent, current_indent_level);
             if (current_line_indent > indent_level)
             {
                 indent_stack[++current_indent_level] = indent_level = current_line_indent;
