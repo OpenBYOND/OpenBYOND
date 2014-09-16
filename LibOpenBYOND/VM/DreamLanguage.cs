@@ -86,6 +86,8 @@ namespace OpenBYOND.VM
             var procdecl = new NonTerminal("procdecl");
             var procchildren = new NonTerminal("procchildren", "proc children");
 
+            // Atoms
+            var atomdef = new NonTerminal("atomdef");
             var atomblock = new NonTerminal("atomblock", "atom declaration");
             var atomchildren = new NonTerminal("atomchildren", "atom declaration");
             var atomchild = new NonTerminal("atomchild", "atom child");
@@ -95,6 +97,9 @@ namespace OpenBYOND.VM
             var abspath = new NonTerminal("abspath", "absolute path");
             var relpath = new NonTerminal("relpath", "relative path");
             var pathslash = new NonTerminal("pathslash");
+
+            // Statements
+            /////////////////////////////
 
             // Variable declaration
             var vardefs = new NonTerminal("vardefs");
@@ -125,6 +130,14 @@ namespace OpenBYOND.VM
 
             var script = new NonTerminal("script", "script root", typeof(StatementListNode));
             var declblocks = new NonTerminal("declblocks", "declarative blocks");
+
+            // Because Irony is dumb sometimes.
+            var INDENT = new NonTerminal("INDENT") {
+                Rule = Eos + Indent
+            };
+            var DEDENT = new NonTerminal("INDENT") {
+                Rule = Eos + Dedent
+            };
             #endregion
 
             #region BNF Rules
@@ -149,7 +162,7 @@ namespace OpenBYOND.VM
 
             #region Blocks (atoms, procs, if, etc)
             // <atomblock> ::= <path> INDENT <atomchildren> DEDENT
-            atomblock.Rule = path + Indent + atomchildren + Dedent;
+            atomblock.Rule = path + INDENT + atomchildren + DEDENT;
 
             // <atomchildren> ::= <atomchild>*
             atomchildren.Rule = MakeStarRule(atomchildren, atomchild);
@@ -165,7 +178,7 @@ namespace OpenBYOND.VM
                            ;
 
             // <procblock> ::= PROC INDENT <procdefs> DEDENT
-            procblock.Rule = PROC + Indent + procdefs + Dedent;
+            procblock.Rule = PROC + INDENT + procdefs + DEDENT;
 
             // <procdefs> ::= <procdef_no_path>+
             procdefs.Rule = MakePlusRule(procdefs,procdef_no_path);
@@ -196,8 +209,7 @@ namespace OpenBYOND.VM
 	        // VAR path(/) identifier(honk)
             // <inline_vardef_no_default> ::= VAR <abspath> '/' IDENTIFIER
             //                              | VAR '/' IDENTIFIER
-            inline_vardef_no_default.Rule = VAR + abspath + SLASH + IDENTIFIER
-                                          | VAR + SLASH + IDENTIFIER
+            inline_vardef_no_default.Rule = VAR + abspath
                                           ;
             // <inline_vardef> ::= inline_vardef_no_default
             //                   | inline_vardef_no_default '='
@@ -206,7 +218,7 @@ namespace OpenBYOND.VM
                                ;
 	
             // <varblock> ::= VAR INDENT <vardefs> DEDENT
-            varblock.Rule = VAR + Indent + vardefs + Dedent;
+            varblock.Rule = VAR + INDENT + vardefs + DEDENT;
             #endregion
 
             #region Proc stuff
@@ -222,16 +234,16 @@ namespace OpenBYOND.VM
             //           | <inline_vardef_no_default> 'as' <primitivelist> // var/blah as obj|mob
             //           | <identifier> 'as' <primitivelist>  // blah as obj|mob
             param.Rule = inline_vardef
-                 | IDENTIFIER
-                 | inline_vardef_no_default + "as" + primitivelist
-                 | IDENTIFIER + "as" + primitivelist
-                 ;
+                       | IDENTIFIER
+                       | inline_vardef_no_default + "as" + primitivelist
+                       | IDENTIFIER + "as" + primitivelist
+                       ;
 
             // <procdef> ::= <path> <parameters> INDENT <expressions> DEDENT
-            procdef.Rule = path + parameters + Indent + expressions + Dedent;
+            procdef.Rule = path + parameters + INDENT + expressions + DEDENT;
 
             // <procdef_no_path> ::= IDENTIFIER <parameters> INDENT <expressions> DEDENT
-            procdef_no_path.Rule = IDENTIFIER + parameters + Indent + expressions + Dedent;
+            procdef_no_path.Rule = IDENTIFIER + parameters + INDENT + expressions + DEDENT;
 
             // <procslash> ::= PROC SLASH
             procslash.Rule = PROC + SLASH;
@@ -309,9 +321,10 @@ namespace OpenBYOND.VM
             script.Rule = declblocks;
             this.Root = script;
             #endregion
+            AddToNoReportGroup(Eos); 
 
-            this.MarkReservedWords("break", "continue", "else", "for",
-                "if", "return", "while", "proc");
+            this.MarkReservedWords("break", "continue", "else", "for", "if", "return", "while", "proc");
+
             this.LanguageFlags = LanguageFlags.NewLineBeforeEOF | LanguageFlags.CreateAst | LanguageFlags.SupportsBigInt;
         }
 
