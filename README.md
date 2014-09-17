@@ -1,6 +1,7 @@
+[![Build Status](http://ci.nexisonline.net/buildStatus/icon?job=OpenBYOND)](http://ci.nexisonline.net/job/OpenBYOND/)
+
 OpenBYOND
 =========
-[![Build Status](http://ci.nexisonline.net/buildStatus/icon?job=OpenBYOND)](http://ci.nexisonline.net/job/OpenBYOND/)
 
 OpenBYOND for C#
 
