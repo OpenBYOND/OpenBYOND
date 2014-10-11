@@ -6,7 +6,7 @@ using Irony.Parsing;
 using log4net;
 using System.Diagnostics;
 
-namespace OpenBYOND.VM
+namespace OpenBYOND.Dream
 {
     /// <summary>
     /// Because Irony's indentation filter is dumber than a bag of bricks.
@@ -19,7 +19,7 @@ namespace OpenBYOND.VM
         public int[] indent_stack = new int[200];
         public TokenStack OutputTokens = new TokenStack();
         private ParsingContext pcontext;
-        private bool readingIndents = true;
+        //private bool readingIndents = true;
         private Grammar grammar;
         private GrammarData grammarData;
         private int current_indent_level = 0;
@@ -88,7 +88,7 @@ namespace OpenBYOND.VM
             if (t.Terminal == this.grammar.LineStartTerminal) return HandleLineStart(t);
             if (t.Terminal == this.grammar.Eos) { current_line_indent = 0; linenum++; /*ignoring blank line */ }
             PushToken(t);
-            readingIndents = false;
+            //readingIndents = false;
             return false;
         }
 

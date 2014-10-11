@@ -6,6 +6,7 @@ using Irony.Parsing;
 using Irony.Interpreter;
 using Irony.Ast;
 using Irony.Interpreter.Ast;
+using OpenBYOND.Dream.AST;
 
 /**************************************************************************
  * WARNING: HERE BE DRAGONS.
@@ -20,7 +21,7 @@ using Irony.Interpreter.Ast;
  * CONSULT N3X15 BEFORE MODIFYING. nexisentertainment@gmail.com
  ***************************************************************************/
 
-namespace OpenBYOND.VM
+namespace OpenBYOND.Dream
 {
     /// <summary>
     /// We're going to go ahead and call our butchered implementation of the BYOND programming language "Dream".  
@@ -109,7 +110,7 @@ namespace OpenBYOND.VM
             var varblock = new NonTerminal("varblock");
 
             // Parameters
-            var param = new NonTerminal("param", "parameter");
+            var param = new NonTerminal("param", "parameter"/*, typeof(OpenBYOND.Dream.AST.ParameterNode)*/);
             var parameters = new NonTerminal("parameters");
             var paramlist = new NonTerminal("paramlist", "parameter list", typeof(ParamListNode));
 
@@ -322,7 +323,7 @@ namespace OpenBYOND.VM
 
             this.MarkReservedWords("break", "continue", "else", "for", "if", "return", "while", "proc");
 
-            this.LanguageFlags = LanguageFlags.NewLineBeforeEOF /*| LanguageFlags.CreateAst*/ | LanguageFlags.SupportsBigInt;
+            this.LanguageFlags = LanguageFlags.NewLineBeforeEOF | LanguageFlags.CreateAst | LanguageFlags.SupportsBigInt;
         }
 
         public override void CreateTokenFilters(LanguageData language, TokenFilterList filters)

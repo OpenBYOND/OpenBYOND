@@ -27,7 +27,7 @@ namespace OpenBYOND.World
         public Atom default_turf = null;
 
         public World()
-            : base("/reserved/world")
+            : base("/reserved/world") // lolidfk
         {
         }
 
@@ -35,9 +35,15 @@ namespace OpenBYOND.World
         {
             ZLevel zLevel = new ZLevel(width, height);
             if (z >= 0)
+            {
                 Levels[z] = zLevel;
+            }
             else
+            {
                 Levels.Add(zLevel);
+                z = Levels.Count - 1;
+            }
+            zLevel.Initialize((uint)z);
             return zLevel;
         }
 

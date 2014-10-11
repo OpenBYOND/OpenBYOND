@@ -15,5 +15,12 @@ namespace OpenBYOND.World
 
         public string origID;
         public int ID = -1;
+
+        public Location loc;
+
+        internal Tile(uint x, uint y, uint z)
+        {
+            loc = new Location(x, y, z, this);
+        }
     }
 }
