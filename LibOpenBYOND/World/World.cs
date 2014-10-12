@@ -69,12 +69,12 @@ namespace OpenBYOND.World
         public LocIterator IterLocs() { return new LocIterator(this); }
         */
 
-        public void Load(string filename, WorldFormat wf)
+        public void Load(string filename, WorldLoader wf)
         {
             wf.Load(this, filename);
         }
 
-        public void Save(string filename, WorldFormat wf)
+        public void Save(string filename, WorldWriter wf)
         {
             wf.Save(this, filename);
         }

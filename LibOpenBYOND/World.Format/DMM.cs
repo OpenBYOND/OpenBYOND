@@ -9,14 +9,16 @@ using OpenBYOND.IO;
 
 namespace OpenBYOND.World.Format
 {
-    public class DMM
+    public class DMMLoader : WorldLoader
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof(DMM));
+        private static readonly ILog log = LogManager.GetLogger(typeof(DMMLoader));
 
-        public static List<string> extensions = new List<string>(){ 
-                                                    "dmm"
-                                                };
-
+        internal override List<string> GetExtensions()
+        {
+            return new List<string>(){ 
+                "dmm"
+            };
+        }
         private enum DMMSection
         {
             AtomList,
@@ -28,21 +30,16 @@ namespace OpenBYOND.World.Format
         private static CharMatcher ATOM_NAME_CHARS;
 
         // STATIC CONSTRUCTOR
-        static DMM()
+        static DMMLoader()
         {
-            // A-Za-z0-9_
-            ATOM_NAME_CHARS = CharRange.Build('A', 'Z') | CharRange.Build('a', 'z') | CharRange.Build('0', '9') | "_";
-        }
-
-        public void Save(World w, string filename)
-        {
-
+            // A-Za-z0-9_/
+            ATOM_NAME_CHARS = CharRange.Build('A', 'Z') | CharRange.Build('a', 'z') | CharRange.Build('0', '9') | "_/";
         }
 
         DMMSection section = DMMSection.AtomList;
         private World world;
         int idlen;
-        public void Load(World w, string filename)
+        public override bool Load(World w, string filename)
         {
             section = DMMSection.AtomList;
             world = w;
@@ -57,6 +54,7 @@ namespace OpenBYOND.World.Format
                     }
                 }
             }
+            return true;
         }
 
         private void LoadMap(TextReader rdr)
@@ -158,7 +156,6 @@ namespace OpenBYOND.World.Format
                 if (lc == '}') return;
             }
         }
-
 
     }
 }
