@@ -30,7 +30,9 @@ namespace OpenBYOND.World
         internal Tile CopyNew(uint x, uint y, uint z)
         {
             Tile t = new Tile(x,y,z);
-            t.Atoms = this.Atoms.ToList(); // FIXME:  I hope this copies instead of LOL I MAEK REF
+            t.Atoms = this.Atoms.Select((Atom a) => {
+                return a.Clone();
+            }).ToList();
             return t;
         }
     }

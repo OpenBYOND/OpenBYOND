@@ -171,6 +171,15 @@ namespace OpenBYOND.VM
         {
             return nativeProperties.ContainsKey(key) || changedProperties.ContainsKey(key) || properties.ContainsKey(key);
         }
+
+        public AtomProperties Clone()
+        {
+            AtomProperties ap = new AtomProperties(this.owner);
+            ap.nativeProperties = this.nativeProperties;
+            ap.properties = new Dictionary<string, Atom>(properties);
+            ap.ClearDeltas();
+            return ap;
+        }
     }
 
     /// <summary>
@@ -313,6 +322,20 @@ namespace OpenBYOND.VM
             {
                 this.Children[k].InheritProperties();
             }
+        }
+
+        internal Atom Clone()
+        {
+            Atom a = new Atom();
+            a.Type = this.Type;
+            a.Children = this.Children;
+            a.Filename = Filename;
+            a.Line = Line;
+            a.Parent = Parent;
+            a.Inherited = Inherited;
+            a.ob_inherited = ob_inherited;
+            a.Properties = Properties.Clone();
+            return a;
         }
     }
 }
