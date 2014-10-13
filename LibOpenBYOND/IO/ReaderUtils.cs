@@ -82,6 +82,11 @@ namespace OpenBYOND.IO
             }
             return false;
         }
+
+        public override string ToString()
+        {
+            return "(" + (string.Join<CharMatcher>(" OR ", Matchers)) + ")";
+        }
     }
 
     public class CharMatcherAndGroup : CharMatcherGroup
@@ -93,6 +98,11 @@ namespace OpenBYOND.IO
                 if (!m.Matches(c)) return false;
             }
             return true;
+        }
+
+        public override string ToString()
+        {
+            return "(" + (string.Join<CharMatcher>(" AND ", Matchers)) + ")";
         }
     }
 
@@ -110,6 +120,11 @@ namespace OpenBYOND.IO
         public override bool Matches(char c)
         {
             return chars.Contains(c);
+        }
+
+        public override string ToString()
+        {
+            return new string(chars);
         }
     }
 
@@ -133,24 +148,29 @@ namespace OpenBYOND.IO
         {
             return c >= this.Start && c <= this.End;
         }
+
+        public override string ToString()
+        {
+            return Start + "-" + End;
+        }
     }
 
     public class ReaderUtils
     {
-        public static string ReadUntil(TextReader rdr, char c)
+        public static string ReadUntil(TextReader rdr, params char[] c)
         {
             string buf = "";
             while (true)
             {
                 char cc = (char)rdr.Read();
-                if (cc == c)
+                if (c.Contains(cc))
                 {
                     return buf;
                 }
                 buf += cc;
             }
         }
-        public static string ReadScriptUntil(TextReader rdr, out char lc, string stringChars = "\"", char escapeChar = '/', params char[] cl)
+        public static string ReadScriptUntil(TextReader rdr, string stringChars, string escapeChars, string endChars, out char lc)
         {
             string buf = "";
             char? endStringWith = null;
@@ -159,28 +179,27 @@ namespace OpenBYOND.IO
             {
                 char cc = (char)rdr.Read();
                 lc = cc;
-                if (endStringWith == null)
+                if (lastChar != null && !escapeChars.Contains((char)lastChar))
                 {
-                    if (lastChar != escapeChar)
+                    if (endStringWith == null)
                     {
                         if (stringChars.Contains(cc))
                         {
                             endStringWith = cc;
                         }
-                        else if (cl.Contains(cc))
+                        else if (endChars.Contains(cc))
                         {
                             return buf;
                         }
+
                     }
-                }
-                else
-                {
-                    if (lastChar != escapeChar)
+                    else
                     {
                         if (endStringWith == cc)
                         {
                             endStringWith = null;
                         }
+
                     }
                 }
                 buf += cc;
@@ -196,11 +215,15 @@ namespace OpenBYOND.IO
         internal static string ReadCharRange(TextReader rdr, CharMatcher matcher)
         {
             string buf = "";
+            //Console.WriteLine("Read Char Range in {0}", matcher);
             while (true)
             {
                 char c = (char)rdr.Peek();
                 if (!matcher.Matches(c))
+                {
+                    //Console.WriteLine(" Char '{0}' not in range {2}. Returning {1}.", c, buf, matcher);
                     return buf;
+                }
                 rdr.Read();
                 buf += c;
             }

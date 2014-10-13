@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Options;
 using OpenBYOND.VM;
+using BYONDWorld = OpenBYOND.World.World;
 using log4net;
+using OpenBYOND.World.Format;
 
 namespace OpenBYOND.Client
 {
@@ -21,11 +23,24 @@ namespace OpenBYOND.Client
         static void Main(string[] args)
         {
             OptionSet argparser = new OptionSet() { 
-                {"load-dme=", v => LoadObjectTreeFrom(v)}
+                {"load-dme=", v => LoadObjectTreeFrom(v)},
+                {"load-dmm=", v => LoadDMM(v)},
             };
             argparser.Parse(args);
             using (var game = new OpenBYONDGame())
                 game.Run();
+        }
+
+        private static void LoadDMM(string file)
+        {
+            log.InfoFormat("Attempting to load {0}...",file);
+
+            BYONDWorld w = new BYONDWorld();
+            w.Load(file, new DMMLoader());
+
+            log.Info("MAP LOAD COMPLETE");
+
+            Environment.Exit(0);
         }
 
         private static void LoadObjectTreeFrom(string file)
@@ -38,7 +53,7 @@ namespace OpenBYOND.Client
             ObjectTree otr = new ObjectTree();
             foreach (string filename in dme.Files)
             {
-                if(filename.EndsWith(".dm"))
+                if (filename.EndsWith(".dm"))
                     otr.ProcessFile(filename);
             }
 

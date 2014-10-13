@@ -6,6 +6,8 @@ using System.IO;
 using OpenBYOND.VM;
 using log4net;
 using OpenBYOND.IO;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace OpenBYOND.World.Format
 {
@@ -28,12 +30,16 @@ namespace OpenBYOND.World.Format
         private Dictionary<string, Tile> Tiles = new Dictionary<string, Tile>();
 
         private static CharMatcher ATOM_NAME_CHARS;
+        private static Regex REGEX_FLOAT;
+        private static Regex REGEX_INTEGER;
 
         // STATIC CONSTRUCTOR
         static DMMLoader()
         {
             // A-Za-z0-9_/
             ATOM_NAME_CHARS = CharRange.Build('A', 'Z') | CharRange.Build('a', 'z') | CharRange.Build('0', '9') | "_/";
+            REGEX_FLOAT = new Regex(@"^[0-9\.]+([Ee][\+\-][0-9]+)?$");
+            REGEX_INTEGER = new Regex(@"^\d+$");
         }
 
         DMMSection section = DMMSection.AtomList;
@@ -108,10 +114,12 @@ namespace OpenBYOND.World.Format
             // Get ID contents
             t.origID = ReaderUtils.ReadUntil(rdr, '"');
             idlen = t.origID.Length;
+            log.InfoFormat("Reading tile {0}", t.origID);
 
             ReaderUtils.ReadUntil(rdr, '(');
 
             uint atomID = 0; // Which atom we're currently on IN THIS TILEDEF.
+
 
             // Read atomdefs.
             while (true)
@@ -119,21 +127,31 @@ namespace OpenBYOND.World.Format
                 char nextChar = ReaderUtils.GetNextChar(rdr);
                 if (nextChar == ')')
                     break;
-                Atom a = new Atom(ReaderUtils.ReadCharRange(rdr, ATOM_NAME_CHARS), false);
+                Console.WriteLine("nextChar = '{0}'", nextChar);
+                ReaderUtils.ReadUntil(rdr, '/');
+                string atomType = ReaderUtils.ReadCharRange(rdr, ATOM_NAME_CHARS);
+                if (string.IsNullOrWhiteSpace(atomType))
+                    throw new InvalidDataException(string.Format("atomType is \"{0}\"", atomType));
+                Atom a = new Atom(atomType, false);
+
+                nextChar = ReaderUtils.GetNextChar(rdr);
                 switch (nextChar)
                 {
                     case '{':
                         // We're in a propertygroup.  Read the properties.
+                        rdr.Read();
                         LoadPropertyGroup(rdr, a);
+                        //rdr.Read();
                         break;
                     case ',':
-                        // Do nothing.
+                        rdr.Read();
                         break;
                     default:
                         log.FatalFormat("UNKNOWN CHARACTER {0} IN TILEDEF {1}, ATOMDEF #{2}. EXPECTING: '{,'", nextChar, t.origID, atomID);
                         break;
                 }
                 t.Atoms.Add(a);
+                atomID++;
             }
 
         }
@@ -144,16 +162,21 @@ namespace OpenBYOND.World.Format
             {
                 string propName = ReaderUtils.ReadUntil(rdr, '=').Trim(); // blah =
                 char lc;
-                string propValue = ReaderUtils.ReadScriptUntil(rdr, out lc, "\"'", ';', '}');
+                string propValue = ReaderUtils.ReadScriptUntil(rdr, "\"'", "\\", ";}", out lc).Trim();
 
                 if (propValue.Contains('"'))
                     a.SetProperty<string>(propName, propValue.Substring(1, propValue.Length - 2));
-                else if (propValue.Contains('.'))
-                    a.SetProperty<double>(propName, double.Parse(propValue));
-                else
+                else if (REGEX_FLOAT.IsMatch(propValue))
+                    a.SetProperty<double>(propName, double.Parse(propValue,System.Globalization.NumberStyles.Any));
+                else if (propValue == "null")
+                    a.Properties[propName]=new BYONDNull();
+                else if (REGEX_INTEGER.IsMatch(propValue))
                     a.SetProperty<int>(propName, int.Parse(propValue));
+                else // lolidk
+                    a.Properties[propName] = new BYONDUnhandledValue(propValue);
 
-                if (lc == '}') return;
+                if (lc == '}') 
+                    return;
             }
         }
 
