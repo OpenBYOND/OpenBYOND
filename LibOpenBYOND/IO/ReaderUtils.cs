@@ -162,7 +162,9 @@ namespace OpenBYOND.IO
             string buf = "";
             while (true)
             {
-                char cc = (char)rdr.Read();
+                int ci = rdr.Read();
+                if (ci == -1) throw new EndOfStreamException();
+                char cc = (char)ci;
                 if (c.Contains(cc))
                 {
                     return buf;
@@ -177,7 +179,9 @@ namespace OpenBYOND.IO
             char? lastChar = null;
             while (true)
             {
-                char cc = (char)rdr.Read();
+                int ci = rdr.Read();
+                if (ci == -1) throw new EndOfStreamException();
+                char cc = (char)ci;
                 lc = cc;
                 if (lastChar != null && !escapeChars.Contains((char)lastChar))
                 {
@@ -209,19 +213,31 @@ namespace OpenBYOND.IO
 
         internal static char GetNextChar(TextReader rdr)
         {
-            return (char)rdr.Peek();
+            int ci = rdr.Peek();
+            if (ci > -1)
+                return (char)ci;
+            throw new EndOfStreamException();
         }
 
-        internal static string ReadCharRange(TextReader rdr, CharMatcher matcher)
+        private static char ReadAChar(TextReader rdr)
+        {
+            int ci = rdr.Read();
+            if (ci > -1)
+                return (char)ci;
+            throw new EndOfStreamException();
+        }
+
+        internal static string ReadCharRange(TextReader rdr, CharMatcher matcher, bool debug=false)
         {
             string buf = "";
             //Console.WriteLine("Read Char Range in {0}", matcher);
             while (true)
             {
-                char c = (char)rdr.Peek();
+                char c = GetNextChar(rdr);
                 if (!matcher.Matches(c))
                 {
-                    //Console.WriteLine(" Char '{0}' not in range {2}. Returning {1}.", c, buf, matcher);
+                    if(debug)
+                        Console.WriteLine(" Char '{0}' not in range {2}. Returning {1}.", c, buf, matcher);
                     return buf;
                 }
                 rdr.Read();

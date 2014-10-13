@@ -30,6 +30,7 @@ namespace OpenBYOND.World.Format
         private Dictionary<string, Tile> Tiles = new Dictionary<string, Tile>();
 
         private static CharMatcher ATOM_NAME_CHARS;
+        private static CharMatcher WHITESPACE;
         private static Regex REGEX_FLOAT;
         private static Regex REGEX_INTEGER;
 
@@ -38,6 +39,7 @@ namespace OpenBYOND.World.Format
         {
             // A-Za-z0-9_/
             ATOM_NAME_CHARS = CharRange.Build('A', 'Z') | CharRange.Build('a', 'z') | CharRange.Build('0', '9') | "_/";
+            WHITESPACE = new ConstCharMatcher("\r\n");
             REGEX_FLOAT = new Regex(@"^[0-9\.]+([Ee][\+\-][0-9]+)?$");
             REGEX_INTEGER = new Regex(@"^\d+$");
         }
@@ -51,13 +53,20 @@ namespace OpenBYOND.World.Format
             world = w;
             using (TextReader rdr = File.OpenText(filename))
             {
-                while (rdr.Peek() > -1)
+                try
                 {
-                    switch (section)
+                    while (rdr.Peek() > -1)
                     {
-                        case DMMSection.AtomList: LoadAtom(rdr); break;
-                        case DMMSection.Map: LoadMap(rdr); break;
+                        switch (section)
+                        {
+                            case DMMSection.AtomList: LoadAtom(rdr); break;
+                            case DMMSection.Map: LoadMap(rdr); break;
+                        }
                     }
+                }
+                catch (EndOfStreamException)
+                {
+                    // Do nothing (EOF)
                 }
             }
             return true;
@@ -65,6 +74,8 @@ namespace OpenBYOND.World.Format
 
         private void LoadMap(TextReader rdr)
         {
+            Console.WriteLine("Reading z-level #{0}", world.Levels.Count);
+
             // (1,1,1) = {"
             ReaderUtils.ReadUntil(rdr, '"');
 
@@ -83,14 +94,22 @@ namespace OpenBYOND.World.Format
             {
                 idmap.Add(new List<string>());
                 string line = rdr.ReadLine();
+                if (string.IsNullOrEmpty(line)) continue;
+                //Console.WriteLine(line);
                 if (line.StartsWith("\"}"))
+                {
                     break;
+                }
                 line = line.Trim();
                 size_x = (uint)(line.Length / idlen);
                 for (x = 0; x < line.Length; x += idlen)
                 {
                     idbuf = line.Substring(x, idlen);
                     idmap[y].Add(idbuf);
+                }
+                if (idmap[y].Count == 0)
+                {
+                    throw new InvalidDataException(string.Format("idmap[{0}] is empty.", y));
                 }
                 y++;
             }
@@ -101,12 +120,14 @@ namespace OpenBYOND.World.Format
             for (y = 0; y < size_y; y++)
                 for (x = 0; x < size_x; x++)
                     zlevel.Tiles[x, y] = Tiles[idmap[y][x]].CopyNew((uint)x, (uint)y, zlevel.Z);
+            Console.WriteLine(" -> Loaded {0}x{1} tilemap.", size_x, size_y);
         }
 
         private void LoadAtom(TextReader rdr)
         {
             // "aai" = (/obj/structure/sign/securearea{desc = "A warning sign which reads 'HIGH VOLTAGE'"; icon_state = "shock"; name = "HIGH VOLTAGE"; pixel_y = -32},/turf/space,/area)
             // Move to ID.
+
             ReaderUtils.ReadUntil(rdr, '"');
 
             Tile t = new Tile();
@@ -114,24 +135,26 @@ namespace OpenBYOND.World.Format
             // Get ID contents
             t.origID = ReaderUtils.ReadUntil(rdr, '"');
             idlen = t.origID.Length;
-            log.InfoFormat("Reading tile {0}", t.origID);
+            //log.InfoFormat("Reading tile {0}", t.origID);
 
             ReaderUtils.ReadUntil(rdr, '(');
 
             uint atomID = 0; // Which atom we're currently on IN THIS TILEDEF.
 
-
             // Read atomdefs.
-            while (true)
+            bool finishedReadingAtoms = false;
+            while (!finishedReadingAtoms)
             {
                 char nextChar = ReaderUtils.GetNextChar(rdr);
                 if (nextChar == ')')
                     break;
-                Console.WriteLine("nextChar = '{0}'", nextChar);
+
                 ReaderUtils.ReadUntil(rdr, '/');
+                
                 string atomType = ReaderUtils.ReadCharRange(rdr, ATOM_NAME_CHARS);
                 if (string.IsNullOrWhiteSpace(atomType))
                     throw new InvalidDataException(string.Format("atomType is \"{0}\"", atomType));
+
                 Atom a = new Atom(atomType, false);
 
                 nextChar = ReaderUtils.GetNextChar(rdr);
@@ -146,14 +169,31 @@ namespace OpenBYOND.World.Format
                     case ',':
                         rdr.Read();
                         break;
+                    case ')':
+                        finishedReadingAtoms = true;
+                        rdr.Read();
+                        break;
                     default:
-                        log.FatalFormat("UNKNOWN CHARACTER {0} IN TILEDEF {1}, ATOMDEF #{2}. EXPECTING: '{,'", nextChar, t.origID, atomID);
+                        //log.FatalFormat(
+                        Console.WriteLine("UNKNOWN CHARACTER {0} IN TILEDEF {1}, ATOMDEF #{2}. EXPECTING: '{{),'", nextChar, t.origID, atomID);
                         break;
                 }
                 t.Atoms.Add(a);
                 atomID++;
             }
 
+            Tiles[t.origID] = t;
+
+            string read = ReaderUtils.ReadCharRange(rdr, WHITESPACE);
+            int numLineReturns = read.Count((char c) => { 
+                return c == '\n'; 
+            });
+            //Console.WriteLine("{1}",read,numLineReturns);
+            if (numLineReturns > 1)
+            {
+                section = DMMSection.Map;
+                Console.WriteLine("Finished reading Tile List section:  {0} tiles loaded.", Tiles.Count);
+            }
         }
 
         private void LoadPropertyGroup(TextReader rdr, Atom a)

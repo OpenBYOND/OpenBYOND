@@ -11,7 +11,7 @@ namespace OpenBYOND.Test
         /// <summary>
         ///A test for Load
         ///</summary>
-        [Test,Ignore("DMM horribly broken")]
+        [Test]
         public void LoadMapTest()
         {
             DMMLoader target = new DMMLoader();
